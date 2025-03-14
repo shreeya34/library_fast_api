@@ -1,3 +1,16 @@
 {
-    
+    "Admin": [
+        {
+            "member_id": "fa369e2c-18ab-43d0-8347-7bcd24f47849",
+            "name": "palpasa",
+            "role": "Admin",
+            "password": "f12sjaj"
+        },
+        {
+            "member_id": "44546c85-6c78-4ccd-83fb-88b01e363a0b",
+            "name": "shreeya",
+            "role": "Admin",
+            "password": "f12sjaj"
+        }
+    ]
 }
