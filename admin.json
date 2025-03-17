@@ -11,6 +11,12 @@
             "name": "shreeya",
             "role": "Admin",
             "password": "f12sjaj"
+        },
+        {
+            "member_id": "57e846ff-8470-4554-af27-c9ecdd26d127",
+            "name": "samir",
+            "role": "Admin",
+            "password": "f1shshsh"
         }
     ]
 }
