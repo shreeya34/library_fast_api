@@ -91,7 +91,8 @@ def login_admin(login: AdminLogin):
 
     
 @app.post("/add_member")
-def add_member(newuser: NewMember, request: Request,token: bool = Depends(token)):
+def add_member(newuser: NewMember, request: Request):
+    admin_token = token(request)
     existing_logins = load_data("member.json")
     if not isinstance(existing_logins, list):
         existing_logins = []
@@ -110,33 +111,35 @@ def add_member(newuser: NewMember, request: Request,token: bool = Depends(token)
 
    
 @app.post("/add_books")
-def add_books(newbook: NewBooks, request: Request,token: bool = Depends(token)):
-                existing_logs = load_data("books.json")
-                if not isinstance(existing_logs, list):
-                    existing_logs = []
+def add_books(request: Request,newbook: NewBooks):
+    admin_token = token(request)
+    existing_logs = load_data("books.json")
+    if not isinstance(existing_logs, list):
+                existing_logs = []
 
-                new_books_data = {
-                    "title": newbook.title,
-                    "author": newbook.author,
-                    "stock": newbook.stock,
-                    "book_id": str(uuid.uuid4())
+    new_books_data = {
+            "title": newbook.title,
+            "author": newbook.author,
+            "stock": newbook.stock,
+            "book_id": str(uuid.uuid4())
                 }
-                for existing_log in existing_logs:
-                    if (
-                        new_books_data["title"] == existing_log["title"] 
-                        and new_books_data["author"] == existing_log["author"]
-                        ):
-                        existing_log["stock"] = existing_log["stock"] + new_books_data["stock"]
-                        save_data("books.json", existing_logs)
-                        return {"message": "Book updated successfully","new_book":new_books_data}
-                        
-                existing_logs.append(new_books_data)
+    for existing_log in existing_logs:
+            if (
+                new_books_data["title"] == existing_log["title"] 
+                and new_books_data["author"] == existing_log["author"]
+                ):
+                existing_log["stock"] = existing_log["stock"] + new_books_data["stock"]
                 save_data("books.json", existing_logs)
-                return {"message": "Book added successfully","new_book":new_books_data}
+                return {"message": "Book updated successfully","new_book":new_books_data}
+                        
+    existing_logs.append(new_books_data)
+    save_data("books.json", existing_logs)
+    return {"message": "Book added successfully","new_book":new_books_data}
     
 
 @app.get("/view_avilable_books")
-def view_books():
+def view_books(request:Request):
+    admin_token = token(request)
     try:
         books_data = load_data("books.json")
         if not isinstance(books_data, list):
@@ -154,7 +157,8 @@ def view_books():
 
 
 @app.get("/view_members", response_model=MembersListResponse)
-async def view_members():
+async def view_members(request:Request):
+    admin_token = token(request)
     try:
         member_data = load_data("member.json")
         if not isinstance(member_data, list):
@@ -211,7 +215,8 @@ def members(memberLogin: MemberLogin):
 
 
 @app.post("/member/borrow_books")
-def borrow_books(request: BorrowRequest, requests: Request,token: bool = Depends(member_token)):
+def borrow_books(request: BorrowRequest, requests: Request):
+    token = member_token(requests)
     try:
         members_data = load_data("member.json")
         if not isinstance(members_data, list):
@@ -256,13 +261,14 @@ def borrow_books(request: BorrowRequest, requests: Request,token: bool = Depends
     
     
 @app.post("/member/return_book")
-def return_books(request: BorrowRequest, requests: Request,token: bool = Depends(member_token)):
+def return_books(request: BorrowRequest, requests: Request):
+    tokens = member_token(requests)
     try:
         members_data = load_data("member.json")
         if not isinstance(members_data, list):
             raise HTTPException(status_code=500, detail="Invalid member data format")
         
-        member = next((m for m in members_data if m.get("name") == request.name), None)
+        member = next((members for members_return in members_data if members_return.get("name" ) == request.name), None)
         if not member:
             raise HTTPException(status_code=404, detail="Member not found")
 
@@ -281,8 +287,6 @@ def return_books(request: BorrowRequest, requests: Request,token: bool = Depends
             "title": request.title,
             "return_date": datetime.now().strftime("%Y-%m-%d"),
         }
-        
-    
         borrow_logs = load_data("return_logs.json")
         if not isinstance(borrow_logs, list):
             borrow_logs = []

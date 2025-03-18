@@ -41,6 +41,18 @@
             "name": "sandhya",
             "role": "Admin",
             "password": "shreeya"
+        },
+        {
+            "member_id": "885083be-ecf9-4fe2-a7de-fced1011d0ac",
+            "name": "palpasa",
+            "role": "Admin",
+            "password": "f12shrty"
+        },
+        {
+            "member_id": "ae608329-4e5d-440f-ac1d-d30f48028de3",
+            "name": "palpasa12",
+            "role": "Admin",
+            "password": "f12shrty"
         }
     ]
 }

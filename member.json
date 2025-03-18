@@ -22,5 +22,11 @@
         "role": "member",
         "password": "shreya",
         "member_id": "ac2af3e2-48f2-4533-883f-b475d5eb0c53"
+    },
+    {
+        "name": "sanjila",
+        "role": "member",
+        "password": "12345",
+        "member_id": "4164c89c-7b30-4eea-991b-839ae238b39c"
     }
 ]

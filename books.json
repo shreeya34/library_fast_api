@@ -34,5 +34,17 @@
         "author": "shreeya",
         "stock": 5,
         "book_id": "907e23b8-18a1-465a-a6cf-75dd389960b1"
+    },
+    {
+        "title": "friends",
+        "author": "sasaas",
+        "stock": 21,
+        "book_id": "198c10be-995e-408f-ae40-145fd6b6fa96"
+    },
+    {
+        "title": "yours",
+        "author": "palpasa",
+        "stock": 8,
+        "book_id": "a04a4379-f1a6-4573-ae80-864462770bc6"
     }
 ]
