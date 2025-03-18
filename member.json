@@ -10,5 +10,17 @@
         "role": "f12sjaj",
         "password": "f12sjaj",
         "member_id": "37864342-d20e-4bfd-9c67-3f86df261611"
+    },
+    {
+        "name": "amisha",
+        "role": "member",
+        "password": "shreeya",
+        "member_id": "2d7a7b43-14c2-4022-a1fb-880ff79cb607"
+    },
+    {
+        "name": "palpasa",
+        "role": "member",
+        "password": "shreya",
+        "member_id": "ac2af3e2-48f2-4533-883f-b475d5eb0c53"
     }
 ]

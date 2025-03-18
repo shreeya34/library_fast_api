@@ -1,8 +1,38 @@
 [
     {
-        "title": "pellow",
+        "title": "stranger",
+        "author": "tisha",
+        "stock": 9,
+        "book_id": "58241d93-1e56-47db-abd3-8da2767dd13c"
+    },
+    {
+        "title": "stranger",
         "author": "shreeya",
-        "stock": 4,
-        "book_id": "8f35ef29-4b6f-4c93-910f-e8dacb7b6b4b"
+        "stock": 18,
+        "book_id": "3d7ba88a-16ce-42a9-a90d-dda9020d2968"
+    },
+    {
+        "title": "deep work",
+        "author": "palpasa",
+        "stock": 10,
+        "book_id": "e4b72a65-6bbc-4a89-8fc9-9bcda5e0958c"
+    },
+    {
+        "title": "rich dad",
+        "author": "amisha",
+        "stock": 16,
+        "book_id": "d21243e2-b907-4770-a575-354d1f0c01ad"
+    },
+    {
+        "title": "work",
+        "author": "samrat",
+        "stock": 5,
+        "book_id": "9f6e5d03-cd73-4420-bb93-d6e2d3d55262"
+    },
+    {
+        "title": "deep work",
+        "author": "shreeya",
+        "stock": 5,
+        "book_id": "907e23b8-18a1-465a-a6cf-75dd389960b1"
     }
 ]

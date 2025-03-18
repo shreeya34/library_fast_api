@@ -17,6 +17,30 @@
             "name": "samir",
             "role": "Admin",
             "password": "f1shshsh"
+        },
+        {
+            "member_id": "db3164cd-79c8-46ec-a4f4-f8db2fdaae48",
+            "name": "samrat",
+            "role": "Admin",
+            "password": "12shree"
+        },
+        {
+            "member_id": "718273a1-4029-4ef8-87cf-9476b88eefbf",
+            "name": "shreeya",
+            "role": "Admin",
+            "password": "f12shshsh"
+        },
+        {
+            "member_id": "2b6948a6-156b-4d95-bcbe-f20e061b07f8",
+            "name": "sandhya",
+            "role": "Admin",
+            "password": "$argon2id$v=19$m=65536,t=3,p=4$EFCSg4ra0ZTV/puP9Uchvw$9h2cWtZpwK3WEAY1VVp5bhwN+J7yVkLsaJVM0iwRc2s"
+        },
+        {
+            "member_id": "0a622cd0-8169-4af0-89f0-757dc95d1adf",
+            "name": "sandhya",
+            "role": "Admin",
+            "password": "shreeya"
         }
     ]
 }

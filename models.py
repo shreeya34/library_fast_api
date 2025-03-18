@@ -1,21 +1,37 @@
-class Book:
-    def __init__(self, book_id, title, author_name, stock):
-        self.book_id = book_id
-        self.title = title
-        self.author_name = author_name
-        self.stock = stock
-        self.available = True
-        
-    def __str__(self):
-        return f"{self.book_id}. {self.title} by {self.author_name}"
+from pydantic import BaseModel
 
-class Member:
-    def __init__(self, member_id, name, role):
-        self.member_id = member_id
-        self.name = name
-        self.role = role
-        
-    def __str__(self):
-        return f"{self.member_id},{self.name},{self.role}"
+    
+class CreateModel(BaseModel):
+    name: str
+    password: str
+    
+class AdminLogin(BaseModel):
+    name: str
+    password: str
+    
+class NewMember(BaseModel):
+    name: str
+    role: str
+    password: str
+
+
+class NewBooks(BaseModel):
+    title:str
+    author:str
+    stock:int
+
+class MemberResponse(BaseModel):
+    name: str
+    role: str
+
+class MembersListResponse(BaseModel):
+    filtered_members:list[MemberResponse]
+
+class MemberLogin(BaseModel):
+    name: str
+    password: str
     
 
+class BorrowRequest(BaseModel):
+    name:str
+    title: str
