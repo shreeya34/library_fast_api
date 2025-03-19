@@ -53,6 +53,24 @@
             "name": "palpasa12",
             "role": "Admin",
             "password": "f12shrty"
+        },
+        {
+            "member_id": "e286c1bb-28e5-475d-9c13-5f607b274910",
+            "name": "susma",
+            "role": "Admin",
+            "password": "f12shs"
+        },
+        {
+            "member_id": "569c551a-8633-44a8-b82d-14b3b0dbd6db",
+            "name": "susma",
+            "role": "Admin",
+            "password": "f12shs"
+        },
+        {
+            "member_id": "49dfc082-643f-4489-a9a2-006d9c8da120",
+            "name": "susma",
+            "role": "Admin",
+            "password": "f12shr"
         }
     ]
 }

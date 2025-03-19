@@ -36,6 +36,10 @@ def create_admin(user: CreateModel):
     data = load_data(file_name)
     if isinstance(data, list):
         data = {"Admin": data} 
+    if "Admin" in data:
+        for admin in data["Admin"]:
+            if admin.get("name") == user.name and admin.get("password") == user.password:
+                raise HTTPException(status_code=400, detail="Admin with the same name and password already exists!")
     admin_id = str(uuid.uuid4())
     print(user.name)
     # password = PasswordHasher()
