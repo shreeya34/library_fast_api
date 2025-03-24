@@ -4,6 +4,30 @@ Library Management System Using FastApi
 This is a FastAPI-based Library Management System that allows administrators to manage books and members.Where admin can add books, add member, view member, view avilable books and members to borrow and return books.
 
 
+# Features
+
+Admin can:
+
+1. Create an account
+
+2. Login
+
+3. Add member
+
+4. Add books
+
+5. View avilable books
+
+6. View members
+
+Member can:
+
+1. Login
+
+2. Borrow books
+
+3. Return books
+
 # Installation
 
 1. Clone the repository:
@@ -34,30 +58,6 @@ fastapi dev main.py
 
 ```
 The API will be available at: http://127.0.0.1:8000
-
-# Features
-
-Admin can:
-
-1. Create an account
-
-2. Login
-
-3. Add member
-
-4. Add books
-
-5. View avilable books
-
-6. View members
-
-Member can:
-
-1. Login
-
-2. Borrow books
-
-3. Return books
 
 # Endpoints
 
@@ -104,6 +104,19 @@ The system uses JSON files to store data:
 2. Admin actions require an admin token
 
 3. Member actions require a member token
+
+# Postman Collection
+
+You can test the API endpoints using Postman. Import the provided postman collection and environment variables:
+
+1. Open Postman
+
+2. Click on import and select the provided collection JSON file.
+
+3. Configure environment variables for authentication tokens.
+
+4. Run API requests directly from postman
+
 
 # Dependencies
 
