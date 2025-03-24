@@ -6,13 +6,20 @@ This is a FastAPI-based Library Management System that allows administrators to 
 
 # Installation
 
-1. Create a virtual environment 
+1. Clone the repository:
+
+```bash
+git clone https://github.com/shreeya34/library_fast_api.git
+
+```
+
+2. Create a virtual environment 
 
 ```bash
 python -m venv env
 
 ```
-2. Install dependencies:
+3. Install dependencies:
 
 ```bash
 pip install -r requirement.txt
@@ -30,27 +37,27 @@ The API will be available at: http://127.0.0.1:8000
 
 # Features
 
-1 Admin can:
+Admin can:
 
-    1. Create an account
+1. Create an account
 
-    2. Login
+2. Login
 
-    3. Add member
+3. Add member
 
-    4. Add books
+4. Add books
 
-    5. View avilable books
+5. View avilable books
 
-    6. View members
+6. View members
 
-2 Member can:
+Member can:
 
-    1. Login
+1. Login
 
-    2. Borrow books
+2. Borrow books
 
-    3. Return books
+3. Return books
 
 # Endpoints
 
