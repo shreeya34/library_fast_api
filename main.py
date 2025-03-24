@@ -82,6 +82,15 @@ def login_admin(login: AdminLogin):
     """
     Login an admin user
     
+    This endpoints checks the provided credentials and return the admin's login status.
+    
+    **Parameters**:
+    -login: Admin login details including name and password
+    
+    **Returns**:
+    -A success message if the login is successful
+    -An error message if the credentials are incorrect
+    
     """
     file_name = "admin.json"
     data = load_data(file_name)
@@ -240,27 +249,23 @@ async def view_members(request:Request):
         raise HTTPException(status_code=500, detail="An error occurred while fetching members")
 
 
-def member_token(request: Request):
-    print(f"Request Headers: {request.headers}")
-    
-    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
-
-    if not auth_header or "Bearer " not in auth_header:
-        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
-
-    token = auth_header.replace("Bearer ", "").strip()
-    print(f"Received token: {token}")
-
-    member_data = load_data("member.json")
-    
-    if isinstance(member_data, list):
-        for member in member_data: 
-            if isinstance(member, dict) and "member_id" in member and member["member_id"] == token:
-                return {"message":"hello"} 
-    raise HTTPException(status_code=403, detail="Invalid token")
 
 @app.post("/member/login")
 def members(memberLogin: MemberLogin):
+    """
+    Login for a member
+    
+    This endpoints checks the provided credentials and return the member's login status.
+    
+    **Parameters**:
+    -memberLogin: Member login details including name and password
+    
+    **Returns**:
+    -Asucess message if the login is successful
+    -An error message if the credentials are incorrect
+    
+    """
+    
     file_name = "member.json"
     data = load_data(file_name)
     if not isinstance(data, list):
@@ -281,9 +286,53 @@ def members(memberLogin: MemberLogin):
     
     return {"message": "Invalid credentials"}
 
+def member_token(request: Request):
+    """
+    Validate the member token
+    
+    **Paremeters**:
+    -request: HTTP request containing the member token
+    
+    **Returns**:
+    -A success message if the token is valid
+    -An error message if the token is invalid
+
+    """
+    print(f"Request Headers: {request.headers}")
+    
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+
+    if not auth_header or "Bearer " not in auth_header:
+        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
+
+    token = auth_header.replace("Bearer ", "").strip()
+    print(f"Received token: {token}")
+
+    member_data = load_data("member.json")
+    
+    if isinstance(member_data, list):
+        for member in member_data: 
+            if isinstance(member, dict) and "member_id" in member and member["member_id"] == token:
+                return {"message":"hello"} 
+    raise HTTPException(status_code=403, detail="Invalid token")
+
 
 @app.post("/member/borrow_books")
 def borrow_books(request: BorrowRequest, requests: Request):
+    """
+    Borrow a book
+    
+    This endpoint allows a member to borrow a book from the library
+    
+    **Parameters**:
+    -request: Borrow request including the name of the member and the title of the book
+    -requests: HTTP request containing the member token
+    
+    **Returns**:
+    -A success message if the book is borrowed successfully
+    -An error message if the book is not available or the member is not found
+    
+    """
     token = member_token(requests)
     try:
         members_data = load_data("member.json")
@@ -329,6 +378,19 @@ def borrow_books(request: BorrowRequest, requests: Request):
     
 @app.post("/member/return_book")
 def return_books(request: BorrowRequest, requests: Request):
+    """
+    Return a book
+    
+    This endpoint allows a member to return a book to the library
+    
+    **Parameters**:
+    -request: Borrow request including the name of the member and the title of the book
+    -requests: HTTP request containing the member token
+    
+    **Returns**:
+    -A success message if the book is returned successfully
+    -An error message if the book is not borrowed or the member is not found
+    """
     tokens = member_token(requests)
     try:
         members_data = load_data("member.json")
