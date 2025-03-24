@@ -29,17 +29,27 @@ fastapi dev main.py
 The API will be available at: http://127.0.0.1:8000
 
 # Features
+
 1 Admin can:
+
     1. Create an account
+
     2. Login
+
     3. Add member
+
     4. Add books
+
     5. View avilable books
+
     6. View members
 
 2 Member can:
+
     1. Login
+
     2. Borrow books
+
     3. Return books
 
 # Endpoints
@@ -69,20 +79,31 @@ The API will be available at: http://127.0.0.1:8000
 # Data Storage
 
 The system uses JSON files to store data:
+
 1. admin.json - Stores admin details
+
 2. member.json - Stores member details
+
 3. books.json - Stores book details
+
 4. borrow_logs.json - Store book borrowing records
+
 5. return_logs.json- Store book return records 
 
 # Authentication
+
 1. Admin and member authenticate via token-based authentication
+
 2. Admin actions require an admin token
+
 3. Member actions require a member token
 
 # Dependencies
+
 1. FastAPI
+
 2. Argon2 for password hasing 
+
 3. JSON for data storage
 
 
