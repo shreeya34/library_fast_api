@@ -71,6 +71,24 @@
             "name": "susma",
             "role": "Admin",
             "password": "f12shr"
+        },
+        {
+            "member_id": "e3882c30-8109-49ee-8f12-89e0592d622a",
+            "name": "susma",
+            "role": "Admin",
+            "password": "$argon2id$v=19$m=65536,t=3,p=4$HLZJzJkaX+hYLDbujaCWkA$TYC+crAcolsB509EW3GXlv20+4Gk2nuwA1Wf3iXMOBs"
+        },
+        {
+            "member_id": "969ecfeb-056f-4e9b-b65b-6ba58d50f664",
+            "name": "susma",
+            "role": "Admin",
+            "password": "f12shrt"
+        },
+        {
+            "member_id": "71e9f33f-f729-41cb-893f-266d4f37d0e7",
+            "name": "shree",
+            "role": "Admin",
+            "password": "f12shrt"
         }
     ]
 }

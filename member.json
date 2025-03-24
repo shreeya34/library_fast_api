@@ -28,5 +28,11 @@
         "role": "member",
         "password": "12345",
         "member_id": "4164c89c-7b30-4eea-991b-839ae238b39c"
+    },
+    {
+        "name": "asma",
+        "role": "student",
+        "password": "fiejsj",
+        "member_id": "d3a94952-cbb7-4432-9e5b-2e851962ad4b"
     }
 ]

@@ -33,5 +33,4 @@ class MemberLogin(BaseModel):
     
 
 class BorrowRequest(BaseModel):
-    name:str
     title: str

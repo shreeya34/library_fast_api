@@ -2,7 +2,7 @@ import json
 from argon2 import PasswordHasher
 from database import Admin
 from data_handling import load_data, save_data
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 import uuid 
 from datetime import datetime, timedelta
 from models import CreateModel,AdminLogin, MembersListResponse,NewMember,NewBooks,MemberLogin,BorrowRequest, MemberResponse
@@ -202,6 +202,7 @@ def members(memberLogin: MemberLogin):
     data = load_data(file_name)
     if not isinstance(data, list):
         raise HTTPException(status_code=500, detail="Invalid member data format")
+    
     for user in data:
         if isinstance(user, dict) and memberLogin.name == user.get("name") and memberLogin.password == user.get("password"):
             member_login = {"name": memberLogin.name, "status": "success", "member_id": user.get("member_id")}
@@ -226,7 +227,6 @@ def borrow_books(request: BorrowRequest, requests: Request):
         if not isinstance(members_data, list):
             raise HTTPException(status_code=500, detail="Invalid member data format")
         
-        # Check if member exists
         member = next((member for member in members_data if member.get("name") == request.name), None)
         if not member:
             raise HTTPException(status_code=404, detail="Member not found")
@@ -275,6 +275,17 @@ def return_books(request: BorrowRequest, requests: Request):
         member = next((members for members_return in members_data if members_return.get("name" ) == request.name), None)
         if not member:
             raise HTTPException(status_code=404, detail="Member not found")
+        
+        borrow_logs = load_data("borrow_logs.json")
+        if not isinstance(borrow_logs, list):
+            borrow_logs = []
+
+        borrowed_book = next(
+            (log for log in borrow_logs if log.get("name") == request.name and log.get("title") == request.title),
+            None
+        )
+        if not borrowed_book:
+            raise HTTPException(status_code=400, detail="You did not borrow this book")
 
         books_data = load_data("books.json")
         if not isinstance(books_data, list):

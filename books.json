@@ -44,7 +44,13 @@
     {
         "title": "yours",
         "author": "palpasa",
-        "stock": 8,
+        "stock": 7,
         "book_id": "a04a4379-f1a6-4573-ae80-864462770bc6"
+    },
+    {
+        "title": "work",
+        "author": "shree",
+        "stock": 10,
+        "book_id": "c3eb319a-704a-4309-81c2-abddff4136c4"
     }
 ]
