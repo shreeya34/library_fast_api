@@ -213,6 +213,18 @@ def view_books(request:Request):
 
 @app.get("/view_members", response_model=MembersListResponse)
 async def view_members(request:Request):
+    """
+    View all members 
+    
+    This endpoints allowa an admin to view a list of all members
+    
+    **Parameters**:
+    - request: HTTP request containing the admin token
+    
+    **Returns**:
+    - A list of members 
+    
+    """
     admin_token = token(request)
     try:
         member_data = load_data("member.json")
