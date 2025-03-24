@@ -32,6 +32,16 @@ def token(request: Request):
 
 @app.post("/admin/")
 def create_admin(user: CreateModel):
+    """
+    Create a new admin user
+    
+    -**user**:Admin user details including name and password
+    
+    Returns the admin ID and name of the created admin
+    
+    -**return**: A dictionary containing the admin ID and name
+    """
+    
     file_name = "admin.json"
     data = load_data(file_name)
     if isinstance(data, list):
@@ -68,6 +78,11 @@ def load_admin_data():
 
 @app.post("/login")
 def login_admin(login: AdminLogin):
+    
+    """
+    Login an admin user
+    
+    """
     file_name = "admin.json"
     data = load_data(file_name)
     
@@ -96,6 +111,17 @@ def login_admin(login: AdminLogin):
     
 @app.post("/add_member")
 def add_member(newuser: NewMember, request: Request):
+    
+    """
+    Add a new member to the library system
+    
+    This endpoint allows an admin to add new member by providing their name, role, and password
+    
+    **Parameters**:
+    - **newuser**: New member details including name, role, and password
+    -request: HTTP request containing the admin token
+    
+    """
     admin_token = token(request)
     existing_logins = load_data("member.json")
     if not isinstance(existing_logins, list):
@@ -116,6 +142,18 @@ def add_member(newuser: NewMember, request: Request):
    
 @app.post("/add_books")
 def add_books(request: Request,newbook: NewBooks):
+    
+    """
+    Add or update a book in the system.
+    
+    This endpoint allows an admin to add a new book or update the stock of an existing book 
+    by providing the title, author, and stock.
+    
+    **Parameters**:
+    - **newbook**: New book details including title, author, and stock
+    - request: HTTP request containing the admin token
+    
+    """
     admin_token = token(request)
     existing_logs = load_data("books.json")
     if not isinstance(existing_logs, list):
@@ -143,6 +181,19 @@ def add_books(request: Request,newbook: NewBooks):
 
 @app.get("/view_avilable_books")
 def view_books(request:Request):
+    
+    """
+    View available books in the library
+    
+    This endpoint allows an admin to view all available books in the library.
+    
+    **Parameters**:
+    - request: HTTP request containing the admin token
+    
+    **Returns**:
+    - A list of books that are avilable (in stock)
+    
+    """
     admin_token = token(request)
     try:
         books_data = load_data("books.json")
@@ -162,6 +213,18 @@ def view_books(request:Request):
 
 @app.get("/view_members", response_model=MembersListResponse)
 async def view_members(request:Request):
+    """
+    View all members 
+    
+    This endpoints allowa an admin to view a list of all members
+    
+    **Parameters**:
+    - request: HTTP request containing the admin token
+    
+    **Returns**:
+    - A list of members 
+    
+    """
     admin_token = token(request)
     try:
         member_data = load_data("member.json")
