@@ -2,10 +2,13 @@ import json
 from argon2 import PasswordHasher
 from database import Admin
 from data_handling import load_data, save_data
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 import uuid 
 from datetime import datetime, timedelta
-from models import CreateModel,AdminLogin, MembersListResponse,NewMember,NewBooks,MemberLogin,BorrowRequest, MemberResponse
+from schema import CreateModel,AdminLogin, MembersListResponse,NewMember,NewBooks,MemberLogin,BorrowRequest, MemberResponse
+from sql import get_db
+from sqlalchemy.orm import Session
+
 
 
 app = FastAPI()
@@ -31,7 +34,7 @@ def token(request: Request):
     raise HTTPException(status_code=403, detail="Invalid token")
 
 @app.post("/admin/")
-def create_admin(user: CreateModel):
+def create_admin(user: CreateModel,db: Session =Depends(get_db)):
     """
     Create a new admin user
     
