@@ -1,13 +1,14 @@
-from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sql import Base
 
 class Admin(Base):
     __tablename__ = 'admin'
-    id = Column(Integer,primary_key=True,index=True)
-    name = Column(String,unique=True)
-    password = Column(String)
     
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(String, unique=True, nullable=False) 
+    name = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+
 # class Member(Base):
 #     __tablename__ = 'member'
 #     id = Column(Integer,primary_key=True,index=True)
