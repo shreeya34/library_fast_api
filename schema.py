@@ -7,9 +7,12 @@ class CreateModel(BaseModel):
     name: str
     password: str
     
-class AdminLogin(BaseModel):
+class AdminLogins(BaseModel):
     name: str
+    status: str
     password: str
+    
+
     
 class NewMember(BaseModel):
     name: str

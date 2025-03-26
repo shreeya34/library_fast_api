@@ -11,8 +11,8 @@ engine = create_engine(DB_URL)
 Sessionlocal = sessionmaker(bind=engine)
 
 def init_db():
-    from models import Admin 
-    Base.metadata.create_all(engine) 
+    from models import Admin,AdminLogin
+    Base.metadata.create_all(engine)  
     print("Tables created successfully!")
 
 def get_db():
@@ -21,5 +21,3 @@ def get_db():
         yield db
     finally:
         db.close()
-        
-
