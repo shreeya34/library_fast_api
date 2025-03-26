@@ -1,6 +1,6 @@
 import json
 from argon2 import PasswordHasher
-from database import Admin
+# from database import Admin
 from data_handling import load_data, save_data
 from fastapi import Depends, FastAPI, HTTPException, Request
 import uuid 
@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from schema import CreateModel,AdminLogin, MembersListResponse,NewMember,NewBooks,MemberLogin,BorrowRequest, MemberResponse
 from sqlalchemy.orm import Session
 from sql import get_db,init_db
+from models import Admin
 
 
 
@@ -16,25 +17,25 @@ app = FastAPI()
 
 init_db()
 
-# def token(request: Request):
-#     print(f"Request Headers: {request.headers}")
+def token(request: Request):
+    print(f"Request Headers: {request.headers}")
     
-#     auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
 
-#     if not auth_header or "Bearer " not in auth_header:
-#         raise HTTPException(status_code=401, detail="No token received or incorrect format!")
+    if not auth_header or "Bearer " not in auth_header:
+        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
 
-#     token = auth_header.replace("Bearer ", "").strip()
-#     print(f"Received token: {token}")
+    token = auth_header.replace("Bearer ", "").strip()
+    print(f"Received token: {token}")
 
-#     admin_data = load_data("admin.json")
+    admin_data = load_data("admin.json")
     
-#     if isinstance(admin_data, dict) and "Admin" in admin_data:
-#         for admin in admin_data["Admin"]:
-#             if isinstance(admin, dict) and "member_id" in admin and admin["member_id"] == token:
-#                 return True  # Authorization successful
+    if isinstance(admin_data, dict) and "Admin" in admin_data:
+        for admin in admin_data["Admin"]:
+            if isinstance(admin, dict) and "member_id" in admin and admin["member_id"] == token:
+                return True  # Authorization successful
     
-#     raise HTTPException(status_code=403, detail="Invalid token")
+    raise HTTPException(status_code=403, detail="Invalid token")
 
 @app.post("/admin/")
 def create_admin(user: CreateModel, db: Session = Depends(get_db)):
@@ -49,11 +50,14 @@ def create_admin(user: CreateModel, db: Session = Depends(get_db)):
     """
     
     # Check if the admin already exists in the database
+    
     existing_admin = db.query(Admin).filter(Admin.name == user.name).first()
     if existing_admin:
         raise HTTPException(status_code=400, detail="Admin with the same name already exists!")
     
     admin_id = str(uuid.uuid4())
+     # password = PasswordHasher()
+    # hashed_password = password.hash(user.password.encode('utf-8'))
     
     new_admin = Admin(admin_id=admin_id, name=user.name, password=user.password)
     db.add(new_admin)
@@ -75,50 +79,50 @@ def create_admin(user: CreateModel, db: Session = Depends(get_db)):
 #     return data.get("Admin", [])
 
 
-# @app.post("/login")
-# def login_admin(login: AdminLogin):
+@app.post("/login")
+def login_admin(login: AdminLogin):
     
-#     """
-#     Login an admin user
+    """
+    Login an admin user
     
-#     This endpoints checks the provided credentials and return the admin's login status.
+    This endpoints checks the provided credentials and return the admin's login status.
     
-#     **Parameters**:
-#     -login: Admin login details including name and password
+    **Parameters**:
+    -login: Admin login details including name and password
     
-#     **Returns**:
-#     -A success message if the login is successful
-#     -An error message if the credentials are incorrect
+    **Returns**:
+    -A success message if the login is successful
+    -An error message if the credentials are incorrect
     
-#     """
-#     file_name = "admin.json"
-#     data = load_data(file_name)
+    """
+    file_name = "admin.json"
+    data = load_data(file_name)
     
-#     print(f"Login Data: {login}") 
+    print(f"Login Data: {login}") 
 
-#     admin_users = data.get("Admin", []) 
+    admin_users = data.get("Admin", []) 
     
-#     for user in admin_users:
-#         if isinstance(user, dict) and login.name == user.get("name") and login.password == user.get("password"):
-#             member_id = user.get("member_id")
+    for user in admin_users:
+        if isinstance(user, dict) and login.name == user.get("name") and login.password == user.get("password"):
+            member_id = user.get("member_id")
             
-#             new_login = {"name": login.name, "status": "success", "member_id": member_id}
-#             existing_logins = load_data("login.json")
-#             if not isinstance(existing_logins, list):
-#                     existing_logins = []
+            new_login = {"name": login.name, "status": "success", "member_id": member_id}
+            existing_logins = load_data("login.json")
+            if not isinstance(existing_logins, list):
+                    existing_logins = []
            
-#             # Append the new login data
-#             existing_logins.append(new_login)
+            # Append the new login data
+            existing_logins.append(new_login)
             
-#             save_data("login.json", existing_logins)
+            save_data("login.json", existing_logins)
                 
-#             return {"message": "Login Success", "member_id": member_id}
+            return {"message": "Login Success", "member_id": member_id}
     
-#     return {"message": "Invalid credentials"}
+    return {"message": "Invalid credentials"}
 
     
 # @app.post("/add_member")
-# def add_member(newuser: NewMember, request: Request):
+# def add_member(newuser: NewMember,  db: Session = Depends(get_db)):
     
 #     """
 #     Add a new member to the library system

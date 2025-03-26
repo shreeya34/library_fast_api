@@ -9,12 +9,12 @@ class Admin(Base):
     name = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
 
-# class Member(Base):
-#     __tablename__ = 'member'
-#     id = Column(Integer,primary_key=True,index=True)
-#     name = Column(String,unique=True)
-#     role = Column(String)
-#     password = Column(String)
+class Member(Base):
+    __tablename__ = 'member'
+    id = Column(Integer,primary_key=True,index=True)
+    name = Column(String,unique=True)
+    role = Column(String)
+    password = Column(String)
 
 # class Book(Base):
 #     __tablename__ = 'book'
