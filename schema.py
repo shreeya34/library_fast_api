@@ -28,6 +28,7 @@ class NewBooks(BaseModel):
 class MemberResponse(BaseModel):
     name: str
     role: str
+    member_id: str
 
 class MembersListResponse(BaseModel):
     filtered_members:List[MemberResponse]

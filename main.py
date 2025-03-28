@@ -1,23 +1,25 @@
 import json
 from argon2 import PasswordHasher
+from fastapi.responses import JSONResponse
 # from database import Admin
 from data_handling import load_data, save_data
 from fastapi import Depends, FastAPI, HTTPException, Request
 import uuid 
 from datetime import datetime, timedelta
-from schema import CreateModel,AdminLogin, MembersListResponse,NewMember,NewBooks,MemberLogin,BorrowRequest, MemberResponse
+from schema import CreateModel,AdminLogins, MembersListResponse,NewMember,NewBooks,MemberLogin,BorrowRequest, MemberResponse
 from sqlalchemy.orm import Session
 from sql import get_db,init_db
-from models import Admin
-
-
-
+from models import Admin,AdminLogin,Book, Member
+from handlers.users import add_admin, get_admins, get_books, get_member, view_all_members, view_avilable_books
+from handlers.exception_handlers import app
 
 app = FastAPI()
 
 init_db()
 
-def token(request: Request):
+
+
+def token(request: Request, db: Session = Depends(get_db)):
     print(f"Request Headers: {request.headers}")
     
     auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
@@ -27,18 +29,17 @@ def token(request: Request):
 
     token = auth_header.replace("Bearer ", "").strip()
     print(f"Received token: {token}")
-
-    admin_data = load_data("admin.json")
     
-    if isinstance(admin_data, dict) and "Admin" in admin_data:
-        for admin in admin_data["Admin"]:
-            if isinstance(admin, dict) and "member_id" in admin and admin["member_id"] == token:
-                return True  # Authorization successful
+    # Query the AdminLogin model using the db session
+    admin = db.query(AdminLogin).filter(AdminLogin.member_id == token).first()
+    
+    if admin:
+        return True  # Token valid
     
     raise HTTPException(status_code=403, detail="Invalid token")
 
 @app.post("/admin/")
-def create_admin(user: CreateModel, db: Session = Depends(get_db)):
+def create_admin(user: CreateModel, db: Session = Depends(get_db))-> dict:
     """
     Create a new admin user
     
@@ -48,208 +49,112 @@ def create_admin(user: CreateModel, db: Session = Depends(get_db)):
     
     - **return**: A dictionary containing the admin ID and name
     """
-    
-    # Check if the admin already exists in the database
-    
-    existing_admin = db.query(Admin).filter(Admin.name == user.name).first()
-    if existing_admin:
-        raise HTTPException(status_code=400, detail="Admin with the same name already exists!")
-    
-    admin_id = str(uuid.uuid4())
-     # password = PasswordHasher()
-    # hashed_password = password.hash(user.password.encode('utf-8'))
-    
-    new_admin = Admin(admin_id=admin_id, name=user.name, password=user.password)
-    db.add(new_admin)
-    db.commit()
-    db.refresh(new_admin)  
-    print(f"Created admin with ID: {admin_id} and name: {new_admin.name}")
-    return {"id": new_admin.admin_id, "name": new_admin.name}
 
-
-# @app.get("/admin/")
-# def get_admins():
-#     admins = load_admin_data()
-#     print(f"Loaded admins data: {admins}")
-#     return admins
-
-# def load_admin_data():
-#     data = load_data()
-#     print(f"Data loaded: {data}")
-#     return data.get("Admin", [])
-
+    
+    sucess = add_admin(user, db)
+    if sucess:
+        return JSONResponse(status_code=201, content={"id": sucess.admin_id, "name": sucess.name})
 
 @app.post("/login")
-def login_admin(login: AdminLogin):
-    
+def login_admin(login: AdminLogins, db: Session = Depends(get_db))-> dict:
     """
     Login an admin user
     
-    This endpoints checks the provided credentials and return the admin's login status.
-    
     **Parameters**:
-    -login: Admin login details including name and password
+    - **login**: Admin login details including name and password
     
     **Returns**:
-    -A success message if the login is successful
-    -An error message if the credentials are incorrect
+    - A success message with admin ID if login is successful
+    - An error message if credentials are incorrect
+    """
+
+    login_admin=get_admins(login, db)
+    if login_admin:
+        return JSONResponse(status_code=200, content={"message": "Login Success", "admin_id": login_admin.member_id})
+        
+    
+    
+@app.post("/add_member")
+def add_member(request:Request,newuser: NewMember,  db: Session = Depends(get_db))-> dict:
     
     """
-    file_name = "admin.json"
-    data = load_data(file_name)
+    Add a new member to the library system
     
-    print(f"Login Data: {login}") 
+    This endpoint allows an admin to add new member by providing their name, role, and password
+    
+    **Parameters**:
+    - **newuser**: New member details including name, role, and password
+    -request: HTTP request containing the admin token
+    
+    """
+    admin_token = token(request,db)  
+    if not admin_token:
+        return {"error": "Invalid admin token"}
+    members=get_member(request, newuser, db)
+    if members:
+        return JSONResponse(status_code=201, content={"message": "Member added successfully", "new_member": members})
 
-    admin_users = data.get("Admin", []) 
-    
-    for user in admin_users:
-        if isinstance(user, dict) and login.name == user.get("name") and login.password == user.get("password"):
-            member_id = user.get("member_id")
-            
-            new_login = {"name": login.name, "status": "success", "member_id": member_id}
-            existing_logins = load_data("login.json")
-            if not isinstance(existing_logins, list):
-                    existing_logins = []
-           
-            # Append the new login data
-            existing_logins.append(new_login)
-            
-            save_data("login.json", existing_logins)
-                
-            return {"message": "Login Success", "member_id": member_id}
-    
-    return {"message": "Invalid credentials"}
-
-    
-# @app.post("/add_member")
-# def add_member(newuser: NewMember,  db: Session = Depends(get_db)):
-    
-#     """
-#     Add a new member to the library system
-    
-#     This endpoint allows an admin to add new member by providing their name, role, and password
-    
-#     **Parameters**:
-#     - **newuser**: New member details including name, role, and password
-#     -request: HTTP request containing the admin token
-    
-#     """
-#     admin_token = token(request)
-#     existing_logins = load_data("member.json")
-#     if not isinstance(existing_logins, list):
-#         existing_logins = []
-
-#     new_member_data = {
-#         "name": newuser.name,
-#         "role": newuser.role,
-#         "password": newuser.password,  
-#         "member_id": str(uuid.uuid4())
-#     }
-    
-#     existing_logins.append(new_member_data)
-#     save_data("member.json", existing_logins)
-
-#     return {"message": "Member added successfully", "new_member": new_member_data}
 
    
-# @app.post("/add_books")
-# def add_books(request: Request,newbook: NewBooks):
-    
-#     """
-#     Add or update a book in the system.
-    
-#     This endpoint allows an admin to add a new book or update the stock of an existing book 
-#     by providing the title, author, and stock.
-    
-#     **Parameters**:
-#     - **newbook**: New book details including title, author, and stock
-#     - request: HTTP request containing the admin token
-    
-#     """
-#     admin_token = token(request)
-#     existing_logs = load_data("books.json")
-#     if not isinstance(existing_logs, list):
-#                 existing_logs = []
+@app.post("/add_books")
+def add_books(request:Request,newbook: NewBooks, db: Session = Depends(get_db))-> dict:
+    """
+    Add or update a book in the system.
 
-#     new_books_data = {
-#             "title": newbook.title,
-#             "author": newbook.author,
-#             "stock": newbook.stock,
-#             "book_id": str(uuid.uuid4())
-#                 }
-#     for existing_log in existing_logs:
-#             if (
-#                 new_books_data["title"] == existing_log["title"] 
-#                 and new_books_data["author"] == existing_log["author"]
-#                 ):
-#                 existing_log["stock"] = existing_log["stock"] + new_books_data["stock"]
-#                 save_data("books.json", existing_logs)
-#                 return {"message": "Book updated successfully","new_book":new_books_data}
-                        
-#     existing_logs.append(new_books_data)
-#     save_data("books.json", existing_logs)
-#     return {"message": "Book added successfully","new_book":new_books_data}
+    This endpoint allows an admin to add a new book or update the stock of an existing book 
+    by providing the title, author, and stock.
+
+    **Parameters**:
+    - **newbook**: New book details including title, author, and stock
+    - request: HTTP request containing the admin token
+    """
+    admin_token = token(request, db)
+    
+    result = get_books(request, newbook, db)
+    
+    # Check if the book exists and was updated
+    if 'new_book' in result:
+        return JSONResponse(status_code=201, content=result) 
+
     
 
-# @app.get("/view_avilable_books")
-# def view_books(request:Request):
+@app.get("/view_available_books")
+def view_books(request: Request, db: Session = Depends(get_db)):
+    """
+    View available books in the library
     
-#     """
-#     View available books in the library
+    This endpoint allows an admin to view all available books in the library.
     
-#     This endpoint allows an admin to view all available books in the library.
+    **Parameters**:
+    - request: HTTP request containing the admin token
     
-#     **Parameters**:
-#     - request: HTTP request containing the admin token
+    **Returns**:
+    - A list of books that are available (in stock)
     
-#     **Returns**:
-#     - A list of books that are avilable (in stock)
+    """
+    admin_token = token(request,db)  
+    viewBooks= view_avilable_books(request, db)
     
-#     """
-#     admin_token = token(request)
-#     try:
-#         books_data = load_data("books.json")
-#         if not isinstance(books_data, list):
-#             books_data = []
+    if viewBooks:
+        return JSONResponse(status_code=200, content=viewBooks)
+ 
 
-#         available_books = [book for book in books_data if int(book.get("stock", 0)) > 0]
-
-#         for book in available_books:
-#             stock = int(book.get("stock", 0))
-#             print(f"{book['title']} by {book['author']} (Stock: {stock})")
-                
-#         return {"message": "Available books", "books": available_books}
-#     except:
-#         raise HTTPException(status_code=500, detail="An error occurred while fetching books")
-
-
-# @app.get("/view_members", response_model=MembersListResponse)
-# async def view_members(request:Request):
-#     """
-#     View all members 
+@app.get("/view_members", response_model=MembersListResponse)
+async def view_members(request: Request, db: Session = Depends(get_db)):
+    """
+    View all members
     
-#     This endpoints allowa an admin to view a list of all members
+    This endpoint allows an admin to view a list of all members.
     
-#     **Parameters**:
-#     - request: HTTP request containing the admin token
+    **Parameters**:
+    - request: HTTP request containing the admin token
     
-#     **Returns**:
-#     - A list of members 
+    **Returns**:
+    - A list of members 
+    """
+    admin_token = token(request)  
     
-#     """
-#     admin_token = token(request)
-#     try:
-#         member_data = load_data("member.json")
-#         if not isinstance(member_data, list):
-#             member_data = []
-
-#         # filtered_members = [{"name": member.get("name"), "role": member.get("role"),} for member in member_data]
-#         filtered_members = [MemberResponse(**member) for member in member_data]
-        
-
-#         return MembersListResponse(filtered_members=filtered_members)
-#     except Exception as err:
-#         raise HTTPException(status_code=500, detail="An error occurred while fetching members")
+    members = view_all_members()
 
 
 
