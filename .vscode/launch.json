@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "FastAPI Debug",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "main:app",  
+                "--host", "127.0.0.1",
+                "--port", "8000",
+                "--reload"
+            ],
+            "env": {
+                "DEBUG": "True",
+                "JWT_SECRET_KEY":"f5acb904130628c0c9dac9bfc9f3edf64b17c22fb2bc5f6a270aac76d9569ebe2bc880fa19a3e8da9a1b72970417820b1a7f6b74afdc4729583c44ac05a2150bfbd356335bfc0d663d2c0703952f4e4e09bdc7d6357594c006ebe5f570a8955f8cca2a7abbf1de4ce3aef21637aeac3e26112e39ddaae90a0b802ea3c6f139de32a530d920f9518a8510302fbf831946468555e781a07807e955ae0e31b6fcefb22a41875e931a30a6c917a7bd6b2addd41b80a8a45028462309eff0993368f21ef9739ff5d76ce7bf1bbc1a9c0815287e48d0e44b95e7bd8f583c5e830890390e606c7d5425838b4dd345b3b7c3583e7bde52949a8a0648218d5f0b9d846664",
+                "JWT_ALGORITHM":"HS256",
+                "ACCESS_TOKEN_EXPIRE_MINUTES":"3600",
+            },
+            "jinja": true
+        }
+    ]
+}

@@ -7,43 +7,55 @@ from models import Admin, AdminLogin, Book, BookAvailability, Member
 from schema import AdminLogins, CreateModel, MembersListResponse, NewBooks, NewMember
 from sql import get_db
 from schema import MemberResponse
-from password_hasing import password
+from password_hasing import hash_password,check_password
+# from token_1 import create_access_token
+from auth.auth_handler import  signJWT
 
 
-def add_admin(user: CreateModel,db: Session)-> bool:
+def add_admin(user: CreateModel, db: Session) -> bool:
     existing_admin = db.query(Admin).filter(Admin.name == user.name).first()
     if existing_admin:
         raise HTTPException(status_code=400, detail="Admin with the same name already exists!")
-    
+
     admin_id = str(uuid.uuid4())
-    hashed_password = password.hash(user.password.encode('utf-8'))
     
+    # Ensure password hashing is correct
+    hashed_password = hash_password(user.password)  
+
     new_admin = Admin(admin_id=admin_id, name=user.name, password=hashed_password)
     db.add(new_admin)
     db.commit()
-    db.refresh(new_admin)  
-    
+    db.refresh(new_admin)
+
     return new_admin
 
 def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
+    # Fetch the admin from the database based on the login name
+    admin = db.query(Admin).filter(Admin.name == login.name).first()
     
-    admin = db.query(Admin).filter(
-        Admin.name == login.name, 
-        Admin.password == login.password  
-    ).first()
+    if not admin or not check_password(login.password, admin.password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    access_token = signJWT(admin.name)
+    print(access_token)
 
     if admin:
-        member_id = admin.admin_id  
-        new_login = AdminLogin(name=login.name, status="success", login_time=datetime.utcnow(),password=login.password,member_id = member_id 
-)
+        member_id = admin.admin_id
+        new_login = AdminLogin(
+            name=login.name, 
+            status="success", 
+            login_time=datetime.utcnow(),
+            password=login.password,
+            member_id=member_id
+        )
         db.add(new_login)
         db.commit()
         db.refresh(new_login)
-        member_id = member_id 
-        
-        return new_login
+
+        return {"message": "Login successful", "token": access_token,"admin_id": admin.admin_id}
+
     
-def get_books(request: Request, newbook: NewBooks, db: Session = Depends(get_db)):
+def add_user_books(request: Request, newbook: NewBooks, db: Session = Depends(get_db)):
     # Check if the book already exists
     existing_logs = db.query(Book).filter(
         Book.title == newbook.title, 
@@ -69,6 +81,7 @@ def get_books(request: Request, newbook: NewBooks, db: Session = Depends(get_db)
         title=newbook.title,
         author=newbook.author,
         stock=newbook.stock,
+        available=True,
         id=str(uuid.uuid4())
     )
     db.add(new_books_data)

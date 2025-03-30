@@ -2,6 +2,7 @@ import json
 from argon2 import PasswordHasher
 from fastapi.responses import JSONResponse
 # from database import Admin
+from auth.auth_handler import get_current_user
 from data_handling import load_data, save_data
 from fastapi import Depends, FastAPI, HTTPException, Request
 import uuid 
@@ -10,7 +11,7 @@ from schema import CreateModel,AdminLogins, MembersListResponse,NewMember,NewBoo
 from sqlalchemy.orm import Session
 from sql import get_db,init_db
 from models import Admin,AdminLogin,Book, Member
-from handlers.users import add_admin, get_admins, get_books, get_member, view_all_members, view_avilable_books
+from handlers.users import add_admin, get_admins, add_user_books, get_member, view_all_members, view_avilable_books
 from handlers.exception_handlers import app
 
 app = FastAPI()
@@ -70,8 +71,9 @@ def login_admin(login: AdminLogins, db: Session = Depends(get_db))-> dict:
 
     login_admin=get_admins(login, db)
     if login_admin:
-        return JSONResponse(status_code=200, content={"message": "Login Success", "admin_id": login_admin.member_id})
-        
+        return JSONResponse(status_code=200, content={"message": "Login Success", "admin_id": login_admin["admin_id"],"token": login_admin["token"],})
+    else:
+        return {"error": "Invalid credentials"}        
     
     
 @app.post("/add_member")
@@ -87,10 +89,14 @@ def add_member(request:Request,newuser: NewMember,  db: Session = Depends(get_db
     -request: HTTP request containing the admin token
     
     """
-    admin_token = token(request,db)  
-    if not admin_token:
-        return {"error": "Invalid admin token"}
-    members=get_member(request, newuser, db)
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+
+    if not auth_header or "Bearer " not in auth_header:
+        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
+
+    verify_if_user_logged_in = get_current_user(auth_header)
+    if verify_if_user_logged_in:
+        members=get_member(request, newuser, db)
     if members:
         return JSONResponse(status_code=201, content={"message": "Member added successfully", "new_member": members})
 
@@ -108,9 +114,15 @@ def add_books(request:Request,newbook: NewBooks, db: Session = Depends(get_db))-
     - **newbook**: New book details including title, author, and stock
     - request: HTTP request containing the admin token
     """
-    admin_token = token(request, db)
-    
-    result = get_books(request, newbook, db)
+    # admin_token = token(request, db)
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+
+    if not auth_header or "Bearer " not in auth_header:
+        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
+
+    verify_if_user_logged_in = get_current_user(auth_header)
+    if verify_if_user_logged_in:
+        result = add_user_books(request, newbook, db)
     
     # Check if the book exists and was updated
     if 'new_book' in result:
@@ -132,8 +144,14 @@ def view_books(request: Request, db: Session = Depends(get_db)):
     - A list of books that are available (in stock)
     
     """
-    admin_token = token(request,db)  
-    viewBooks= view_avilable_books(request, db)
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+
+    if not auth_header or "Bearer " not in auth_header:
+        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
+
+    verify_if_user_logged_in = get_current_user(auth_header)
+    if verify_if_user_logged_in: 
+        viewBooks= view_avilable_books(request, db)
     
     if viewBooks:
         return JSONResponse(status_code=200, content=viewBooks)
