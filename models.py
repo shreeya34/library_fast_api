@@ -23,6 +23,8 @@ class AdminLogin(Base):
     status = Column(String, nullable=False)
     password = Column(String, nullable=False)
     login_time = Column(TIMESTAMP, nullable=True)
+    
+
 
 
 
@@ -44,7 +46,7 @@ class Member(Base):
     name = Column(String, unique=True, nullable=False)
     role = Column(String, nullable=False)
     password = Column(String, nullable=False)
-    
+  
 
     
 class BookAvailability(Base):
@@ -63,6 +65,17 @@ class ViewMembers(Base):
     member_id = Column(String, unique=True, nullable=False)
     name = Column(String, unique=True, nullable=False)
     role = Column(String, nullable=False)
+    
+class MemberLogins(Base):
+    __tablename__='member_logins'
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name=Column(String,nullable=False)
+    member_id=Column(String,nullable=True)
+    status=Column(String,nullable=False)
+    password = Column(String,nullable=False)
+    login_time = Column(TIMESTAMP, nullable=True)
+       
+    
     
 # class BorrowedBooks(Base):
 #     __tablename__ = 'borrowed_books'

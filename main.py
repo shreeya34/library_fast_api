@@ -2,6 +2,7 @@ import json
 from argon2 import PasswordHasher
 from fastapi.responses import JSONResponse
 # from database import Admin
+from auth.auth_bearer import JWTBearer
 from auth.auth_handler import get_current_user
 from data_handling import load_data, save_data
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -11,10 +12,16 @@ from schema import CreateModel,AdminLogins, MembersListResponse,NewMember,NewBoo
 from sqlalchemy.orm import Session
 from sql import get_db,init_db
 from models import Admin,AdminLogin,Book, Member
-from handlers.users import add_admin, get_admins, add_user_books, get_member, view_all_members, view_avilable_books
+from handlers.users import add_admin, get_admins, add_user_books, get_member, member_logins, view_all_members, view_avilable_books
 from handlers.exception_handlers import app
+from auth.auth_utils import get_token_from_request
+from handlers.exception_handlers.app import register_middleware
+
 
 app = FastAPI()
+
+register_middleware(app)
+
 
 init_db()
 
@@ -76,7 +83,7 @@ def login_admin(login: AdminLogins, db: Session = Depends(get_db))-> dict:
         return {"error": "Invalid credentials"}        
     
     
-@app.post("/add_member")
+@app.post("/add_member" , dependencies=[Depends(JWTBearer())], tags=["add_member"])
 def add_member(request:Request,newuser: NewMember,  db: Session = Depends(get_db))-> dict:
     
     """
@@ -89,20 +96,15 @@ def add_member(request:Request,newuser: NewMember,  db: Session = Depends(get_db
     -request: HTTP request containing the admin token
     
     """
-    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
 
-    if not auth_header or "Bearer " not in auth_header:
-        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
-
-    verify_if_user_logged_in = get_current_user(auth_header)
-    if verify_if_user_logged_in:
-        members=get_member(request, newuser, db)
+   
+    members=get_member(request, newuser, db)
     if members:
         return JSONResponse(status_code=201, content={"message": "Member added successfully", "new_member": members})
 
 
    
-@app.post("/add_books")
+@app.post("/add_books", dependencies=[Depends(JWTBearer())], tags=["add_books"])
 def add_books(request:Request,newbook: NewBooks, db: Session = Depends(get_db))-> dict:
     """
     Add or update a book in the system.
@@ -115,14 +117,8 @@ def add_books(request:Request,newbook: NewBooks, db: Session = Depends(get_db))-
     - request: HTTP request containing the admin token
     """
     # admin_token = token(request, db)
-    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
-
-    if not auth_header or "Bearer " not in auth_header:
-        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
-
-    verify_if_user_logged_in = get_current_user(auth_header)
-    if verify_if_user_logged_in:
-        result = add_user_books(request, newbook, db)
+   
+    result = add_user_books(request, newbook, db)
     
     # Check if the book exists and was updated
     if 'new_book' in result:
@@ -130,7 +126,7 @@ def add_books(request:Request,newbook: NewBooks, db: Session = Depends(get_db))-
 
     
 
-@app.get("/view_available_books")
+@app.get("/view_available_books", dependencies=[Depends(JWTBearer())], tags=["view_books"])
 def view_books(request: Request, db: Session = Depends(get_db)):
     """
     View available books in the library
@@ -144,21 +140,15 @@ def view_books(request: Request, db: Session = Depends(get_db)):
     - A list of books that are available (in stock)
     
     """
-    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
-
-    if not auth_header or "Bearer " not in auth_header:
-        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
-
-    verify_if_user_logged_in = get_current_user(auth_header)
-    if verify_if_user_logged_in: 
-        viewBooks= view_avilable_books(request, db)
+   
+    viewBooks= view_avilable_books(request, db)
     
     if viewBooks:
         return JSONResponse(status_code=200, content=viewBooks)
  
 
-@app.get("/view_members", response_model=MembersListResponse)
-async def view_members(request: Request, db: Session = Depends(get_db)):
+@app.get("/view_members", response_model=MembersListResponse, dependencies=[Depends(JWTBearer())], tags=["view_members"])
+def view_members(request: Request, db: Session = Depends(get_db)):
     """
     View all members
     
@@ -170,47 +160,31 @@ async def view_members(request: Request, db: Session = Depends(get_db)):
     **Returns**:
     - A list of members 
     """
-    admin_token = token(request)  
     
-    members = view_all_members()
-
-
-
-# @app.post("/member/login")
-# def members(memberLogin: MemberLogin):
-#     """
-#     Login for a member
-    
-#     This endpoints checks the provided credentials and return the member's login status.
-    
-#     **Parameters**:
-#     -memberLogin: Member login details including name and password
-    
-#     **Returns**:
-#     -Asucess message if the login is successful
-#     -An error message if the credentials are incorrect
-    
-#     """
-    
-#     file_name = "member.json"
-#     data = load_data(file_name)
-#     if not isinstance(data, list):
-#         raise HTTPException(status_code=500, detail="Invalid member data format")
-    
-#     for user in data:
-#         if isinstance(user, dict) and memberLogin.name == user.get("name") and memberLogin.password == user.get("password"):
-#             member_login = {"name": memberLogin.name, "status": "success", "member_id": user.get("member_id")}
-            
-#             existing_logins = load_data("member_login.json")
-#             if not isinstance(existing_logins, list):
-#                 existing_logins = []
+    return view_all_members(request,db)
    
-#             existing_logins.append(member_login)
-#             save_data("member_login.json", existing_logins)
-            
-#             return {"message": "Login Success", "member_id": user.get("member_id")}
+
+@app.post("/member/login")
+def members(memberLogin: MemberLogin ,db: Session = Depends(get_db))-> dict:
+    """
+    Login for a member
     
-#     return {"message": "Invalid credentials"}
+    This endpoints checks the provided credentials and return the member's login status.
+    
+    **Parameters**:
+    -memberLogin: Member login details including name and password
+    
+    **Returns**:
+    -Asucess message if the login is successful
+    -An error message if the credentials are incorrect
+    
+    """
+    login_member=member_logins(memberLogin, db)
+    if login_member:
+        return JSONResponse(status_code=200, content={"message": "Login Success", "admin_id": login_admin["admin_id"],"token": login_admin["token"],})
+    else:
+        return {"error": "Invalid credentials"}        
+    
 
 # def member_token(request: Request):
 #     """

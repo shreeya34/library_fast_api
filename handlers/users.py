@@ -3,8 +3,8 @@ from datetime import datetime
 import uuid
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from models import Admin, AdminLogin, Book, BookAvailability, Member
-from schema import AdminLogins, CreateModel, MembersListResponse, NewBooks, NewMember
+from models import Admin, AdminLogin, Book, BookAvailability, Member, MemberLogins,ViewMembers
+from schema import AdminLogins, CreateModel, MemberLogin, MembersListResponse, NewBooks, NewMember
 from sql import get_db
 from schema import MemberResponse
 from password_hasing import hash_password,check_password
@@ -30,7 +30,6 @@ def add_admin(user: CreateModel, db: Session) -> bool:
     return new_admin
 
 def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
-    # Fetch the admin from the database based on the login name
     admin = db.query(Admin).filter(Admin.name == login.name).first()
     
     if not admin or not check_password(login.password, admin.password):
@@ -106,11 +105,12 @@ def get_member(request: Request, newuser: NewMember, db: Session = Depends(get_d
     
     if existing_member:
         raise HTTPException(status_code=400, detail="Member with this name already exists")
+    hashed_password = hash_password(newuser.password)  
 
     new_member_data = Member(
         name=newuser.name,
         role=newuser.role,
-        password=newuser.password,
+        password=hashed_password,
         member_id=str(uuid.uuid4())
     )
 
@@ -154,14 +154,67 @@ def view_avilable_books(request:Request,db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
-def view_all_members(request:Request,db: Session = Depends(get_db)):
+def view_all_members(request: Request, db: Session = Depends(get_db)):
     try:
         members = db.query(Member).all()
         
-        filtered_members = [MemberResponse(name=member.name, role=member.role) for member in members]
+        for member in members:
+            existing_view_member = db.query(ViewMembers).filter(ViewMembers.member_id == member.member_id).first()
+        db.add(existing_view_member)
         
-        return MembersListResponse(filtered_members=filtered_members)
+        # Commit the changes to the database
+        db.commit()
+
+        view_members = db.query(ViewMembers).all()
+        member_data = [
+            {"name": view_member.name, "role": view_member.role, "member_id": view_member.member_id}
+            for view_member in view_members
+        ]
+
+        return MembersListResponse(filtered_members=member_data)
     
     except Exception as err:
+        print("Error occurred:", str(err))
         raise HTTPException(status_code=500, detail="An error occurred while fetching members")
+
+
+def member_logins(memberLogin: MemberLogin, db: Session = Depends(get_db)) -> dict:
     
+    try:
+        member = db.query(Member).filter(Member.name == memberLogin.name).first()
+        
+    
+
+        if not member or not check_password(memberLogin.password, member.password):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        print(f"Login attempt for: {memberLogin.name}")
+        print(f"Entered password: {memberLogin.password}")
+        print(f"Stored hashed password: {member.password}")
+
+        access_token = signJWT(member.name)
+
+        if member:
+            member_id = member.member_id
+            new_login = MemberLogins(
+                name=memberLogin.name, 
+                status="success", 
+                login_time=datetime.utcnow(),
+                password=memberLogin.password,
+                member_id=member_id
+            )
+            db.add(new_login)
+            db.commit()
+            db.refresh(new_login)
+
+        # Return response with token and member ID
+        return {"message": "Login successful", "token": access_token, "member_id": member.member_id}
+
+    except Exception as e:
+        # Log general errors
+        print(f"Error during login: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+
+

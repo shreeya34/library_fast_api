@@ -45,7 +45,6 @@ def get_current_user(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Token is missing")
     
     try:
-        # Extract the token from the Authorization header
         token = authorization.split("Bearer ")[-1]
         
         decoded_token = decode_jwt(token)
