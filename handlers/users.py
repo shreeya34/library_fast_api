@@ -37,6 +37,8 @@ def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
 
     access_token = signJWT(admin.name)
     print(access_token)
+    
+    
 
     if admin:
         member_id = admin.admin_id
@@ -182,9 +184,6 @@ def member_logins(memberLogin: MemberLogin, db: Session = Depends(get_db)) -> di
     
     try:
         member = db.query(Member).filter(Member.name == memberLogin.name).first()
-        
-    
-
         if not member or not check_password(memberLogin.password, member.password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
@@ -207,11 +206,9 @@ def member_logins(memberLogin: MemberLogin, db: Session = Depends(get_db)) -> di
             db.commit()
             db.refresh(new_login)
 
-        # Return response with token and member ID
         return {"message": "Login successful", "token": access_token, "member_id": member.member_id}
-
+    
     except Exception as e:
-        # Log general errors
         print(f"Error during login: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 

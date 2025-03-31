@@ -181,7 +181,7 @@ def members(memberLogin: MemberLogin ,db: Session = Depends(get_db))-> dict:
     """
     login_member=member_logins(memberLogin, db)
     if login_member:
-        return JSONResponse(status_code=200, content={"message": "Login Success", "admin_id": login_admin["admin_id"],"token": login_admin["token"],})
+        return JSONResponse(status_code=200, content={"message": "Login Success", "admin_id": login_member["member_id"],"token": login_member["token"],})
     else:
         return {"error": "Invalid credentials"}        
     

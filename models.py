@@ -11,11 +11,11 @@ class Admin(Base):
     admin_id = Column(String, unique=True, nullable=False) 
     name = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-
-
-
+    
+    
 class AdminLogin(Base):
     __tablename__ = 'admin_logins'
+    
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String, nullable=False)
@@ -23,13 +23,9 @@ class AdminLogin(Base):
     status = Column(String, nullable=False)
     password = Column(String, nullable=False)
     login_time = Column(TIMESTAMP, nullable=True)
-    
-
-
-
 
 class Book(Base):
-    __tablename__ = 'book'  # Table name is 'book'
+    __tablename__ = 'book' 
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String)
@@ -70,7 +66,7 @@ class MemberLogins(Base):
     __tablename__='member_logins'
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name=Column(String,nullable=False)
-    member_id=Column(String,nullable=True)
+    member_id = Column(String, nullable=False)  
     status=Column(String,nullable=False)
     password = Column(String,nullable=False)
     login_time = Column(TIMESTAMP, nullable=True)
