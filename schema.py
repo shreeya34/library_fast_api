@@ -1,5 +1,8 @@
+from datetime import datetime
 from pydantic import BaseModel
 from typing import List
+
+from sqlalchemy import UUID
 
 
     
@@ -38,8 +41,23 @@ class MemberLogin(BaseModel):
     password: str
     
 
-class BorrowRequest(BaseModel):
-    title: str
     
 class ReturnBookRequest(BaseModel):
+    book_title: str
+    
+class LoginSchema(BaseModel):
+    name: str
+    password: str
+class BorrowBookRequest(BaseModel):
+    book_title: str
+ 
+class BorrowedBookResponse(BaseModel):
     title: str
+    member_id: str
+    name: str
+    borrow_date: datetime
+    expiry_date: datetime
+    
+    
+    
+ 

@@ -1,10 +1,11 @@
 
-from datetime import datetime
+from datetime import datetime, timedelta
+import logging
 import uuid
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from models import Admin, AdminLogin, Book, BookAvailability, Member, MemberLogins,ViewMembers
-from schema import AdminLogins, CreateModel, MemberLogin, MembersListResponse, NewBooks, NewMember
+from models import Admin, AdminLogin, Book, BookAvailability, BorrowedBooks, Member, MemberLogins,ViewMembers
+from schema import AdminLogins, CreateModel, LoginSchema, MemberLogin, MembersListResponse, NewBooks, NewMember
 from sql import get_db
 from schema import MemberResponse
 from password_hasing import hash_password,check_password
@@ -35,11 +36,9 @@ def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
     if not admin or not check_password(login.password, admin.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    access_token = signJWT(admin.name)
-    print(access_token)
-    
-    
+    access_token = signJWT(admin.name,admin.admin_id)
 
+    print(access_token)
     if admin:
         member_id = admin.admin_id
         new_login = AdminLogin(
@@ -55,9 +54,77 @@ def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
 
         return {"message": "Login successful", "token": access_token,"admin_id": admin.admin_id}
 
+#  logging.basicConfig(level=logging.DEBUG)
+# logger = logging.getLogger(__name__)
+# def login(login: LoginSchema, db: Session = Depends(get_db)):
+    user = None
+    role = None
+    try:
+        # Check if the user is an Admin
+        admin = db.query(Admin).filter(Admin.name == login.name).first()
+        if admin:
+            user = admin
+            role = "admin"
+
+        # Check if the user is a Member
+        member = db.query(Member).filter(Member.name == login.name).first()
+        if member:
+            user = member
+            role = "member"
+
+        # If no user found or incorrect password
+        if not user or not check_password(login.password, user.password):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        access_token = signJWT(member.name,member.member_id)
+
+        
+        login_entry = AdminLogin if role == "admin" else MemberLogins
+
+        member_id = user.admin_id if role == "admin" else user.member_id
+
+        # Create new login entry
+        new_login = login_entry(
+            name=login.name, 
+            status="success", 
+            login_time=datetime.utcnow(),
+            password=login.password,  # Ideally, avoid storing password in the login entry
+            member_id=member_id  # Correctly assigning the right member_id based on role
+        )
+
+        # Add and commit the login entry to the database
+        db.add(new_login)
+        db.commit()
+        db.refresh(new_login)
+        
+        # Return successful login response
+        return {
+            "message": "Login successful",
+            "token": access_token,
+            "id": member_id,
+            "role": role
+        }
     
-def add_user_books(request: Request, newbook: NewBooks, db: Session = Depends(get_db)):
-    # Check if the book already exists
+    except Exception as e:
+        import traceback
+        print(f"Error: {e}")
+        print(traceback.format_exc())  # Capture stack trace for debugging
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
+
+def get_current_users(request: Request, db: Session):
+    user_id = request.headers.get("user_id")  # Extract user ID from headers
+    
+    admin = db.query(Admin).filter(Admin.id == user_id).first()
+    
+    if not admin:  
+        raise HTTPException(status_code=403, detail="Only admins can add books")
+
+    return admin  
+
+
+def add_user_books(request: Request, newbook: NewBooks, db: Session = Depends(get_db),current_user: Admin = Depends(get_current_users)
+):
+
     existing_logs = db.query(Book).filter(
         Book.title == newbook.title, 
         Book.author == newbook.author,
@@ -101,7 +168,7 @@ def add_user_books(request: Request, newbook: NewBooks, db: Session = Depends(ge
     }
 
 
-def get_member(request: Request, newuser: NewMember, db: Session = Depends(get_db)):
+def get_member(request: Request, newuser: NewMember, db: Session = Depends(get_db),current_user: Admin = Depends(get_current_users)):
     # Check if a member with the same name already exists
     existing_member = db.query(Member).filter(Member.name == newuser.name).first()
     
@@ -191,7 +258,7 @@ def member_logins(memberLogin: MemberLogin, db: Session = Depends(get_db)) -> di
         print(f"Entered password: {memberLogin.password}")
         print(f"Stored hashed password: {member.password}")
 
-        access_token = signJWT(member.name)
+        access_token = signJWT(member.name,member.member_id)
 
         if member:
             member_id = member.member_id
@@ -211,7 +278,6 @@ def member_logins(memberLogin: MemberLogin, db: Session = Depends(get_db)) -> di
     except Exception as e:
         print(f"Error during login: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    
 
-
-
-
+    

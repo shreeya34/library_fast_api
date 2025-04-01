@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy import TIMESTAMP, UUID, Column, ForeignKey, Integer, String, Boolean, DateTime
 from sql import Base
 import uuid
@@ -21,8 +22,9 @@ class AdminLogin(Base):
     name = Column(String, nullable=False)
     member_id = Column(String, nullable=True) 
     status = Column(String, nullable=False)
-    password = Column(String, nullable=False)
+    password = Column(String, nullable=False) 
     login_time = Column(TIMESTAMP, nullable=True)
+    
 
 class Book(Base):
     __tablename__ = 'book' 
@@ -35,6 +37,9 @@ class Book(Base):
     
     availability = relationship("BookAvailability", back_populates="book", uselist=False)
     
+    borrowed_books = relationship("BorrowedBooks", back_populates="book")
+
+    
 class Member(Base):
     __tablename__ = 'member'
     id = Column(Integer, primary_key=True, index=True)
@@ -42,6 +47,9 @@ class Member(Base):
     name = Column(String, unique=True, nullable=False)
     role = Column(String, nullable=False)
     password = Column(String, nullable=False)
+    
+    borrowed_books = relationship("BorrowedBooks", back_populates="member")
+
   
 
     
@@ -70,16 +78,34 @@ class MemberLogins(Base):
     status=Column(String,nullable=False)
     password = Column(String,nullable=False)
     login_time = Column(TIMESTAMP, nullable=True)
-       
+      
+
+class BorrowedBooks(Base):
+    __tablename__ = 'borrowed_books'
+    id = Column(Integer,primary_key=True,index=True)
+    title = Column(String)
+    member_id = Column(String, ForeignKey("member.member_id"), nullable=False)
+    book_id = Column(UUID(as_uuid=True), ForeignKey("book.id"), nullable=False) 
+    name = Column(String, nullable=False)
+
+    borrow_date = Column(DateTime, default=datetime.now)
+    expiry_date = Column(DateTime)
     
+    member = relationship("Member", back_populates="borrowed_books")
+    book = relationship("Book", back_populates="borrowed_books")
     
-# class BorrowedBooks(Base):
-#     __tablename__ = 'borrowed_books'
-#     id = Column(Integer,primary_key=True,index=True)
-#     title = Column(String)
-#     member_id = Column(Integer)
-#     borrow_date = Column(DateTime, default=datetime.now)
-#     expiry_date = Column(DateTime)
+class ReturnBook(Base):
+    __tablename__ = 'return_book'
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String)
+    member_id = Column(String, ForeignKey("member.member_id"), nullable=False)
+    book_id = Column(UUID(as_uuid=True), ForeignKey("book.id"), nullable=False) 
+    name = Column(String, nullable=False)
+    
+    return_date = Column(DateTime, default=datetime.now)
+    
+    member = relationship("Member", back_populates="borrowed_books")
+    book = relationship("Book", back_populates="borrowed_books")
     
     
 

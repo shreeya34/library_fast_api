@@ -5,17 +5,18 @@ from fastapi.responses import JSONResponse
 from auth.auth_bearer import JWTBearer
 from auth.auth_handler import get_current_user
 from data_handling import load_data, save_data
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 import uuid 
 from datetime import datetime, timedelta
-from schema import CreateModel,AdminLogins, MembersListResponse,NewMember,NewBooks,MemberLogin,BorrowRequest, MemberResponse
+from schema import   BorrowBookRequest, CreateModel,AdminLogins, MembersListResponse,NewMember,NewBooks,MemberLogin, MemberResponse, ReturnBookRequest
 from sqlalchemy.orm import Session
 from sql import get_db,init_db
-from models import Admin,AdminLogin,Book, Member
-from handlers.users import add_admin, get_admins, add_user_books, get_member, member_logins, view_all_members, view_avilable_books
+from models import Admin,AdminLogin,Book, BookAvailability, BorrowedBooks, Member, MemberLogins
+from handlers.users import add_admin,get_admins, add_user_books, get_member, member_logins, view_all_members, view_avilable_books
 from handlers.exception_handlers import app
 from auth.auth_utils import get_token_from_request
 from handlers.exception_handlers.app import register_middleware
+from handlers.users import get_current_users
 
 
 app = FastAPI()
@@ -64,7 +65,7 @@ def create_admin(user: CreateModel, db: Session = Depends(get_db))-> dict:
         return JSONResponse(status_code=201, content={"id": sucess.admin_id, "name": sucess.name})
 
 @app.post("/login")
-def login_admin(login: AdminLogins, db: Session = Depends(get_db))-> dict:
+def login_admin(logins: AdminLogins, db: Session = Depends(get_db))-> dict:
     """
     Login an admin user
     
@@ -76,7 +77,7 @@ def login_admin(login: AdminLogins, db: Session = Depends(get_db))-> dict:
     - An error message if credentials are incorrect
     """
 
-    login_admin=get_admins(login, db)
+    login_admin=get_admins(logins, db)
     if login_admin:
         return JSONResponse(status_code=200, content={"message": "Login Success", "admin_id": login_admin["admin_id"],"token": login_admin["token"],})
     else:
@@ -186,98 +187,121 @@ def members(memberLogin: MemberLogin ,db: Session = Depends(get_db))-> dict:
         return {"error": "Invalid credentials"}        
     
 
-# def member_token(request: Request):
-#     """
-#     Validate the member token
+def member_token(request: Request):
+    """
+    Validate the member token
     
-#     **Paremeters**:
-#     -request: HTTP request containing the member token
+    **Paremeters**:
+    -request: HTTP request containing the member token
     
-#     **Returns**:
-#     -A success message if the token is valid
-#     -An error message if the token is invalid
+    **Returns**:
+    -A success message if the token is valid
+    -An error message if the token is invalid
 
-#     """
-#     print(f"Request Headers: {request.headers}")
+    """
+    print(f"Request Headers: {request.headers}")
     
-#     auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
 
-#     if not auth_header or "Bearer " not in auth_header:
-#         raise HTTPException(status_code=401, detail="No token received or incorrect format!")
+    if not auth_header or "Bearer " not in auth_header:
+        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
 
-#     token = auth_header.replace("Bearer ", "").strip()
-#     print(f"Received token: {token}")
+    token = auth_header.replace("Bearer ", "").strip()
+    print(f"Received token: {token}")
 
-#     member_data = load_data("member.json")
+    member_data = load_data("member.json")
     
-#     if isinstance(member_data, list):
-#         for member in member_data: 
-#             if isinstance(member, dict) and "member_id" in member and member["member_id"] == token:
-#                 return {"message":"hello"} 
-#     raise HTTPException(status_code=403, detail="Invalid token")
+    if isinstance(member_data, list):
+        for member in member_data: 
+            if isinstance(member, dict) and "member_id" in member and member["member_id"] == token:
+                return {"message":"hello"} 
+    raise HTTPException(status_code=403, detail="Invalid token")
 
 
-# @app.post("/member/borrow_books")
-# def borrow_books(request: BorrowRequest, requests: Request):
-#     """
-#     Borrow a book
-    
-#     This endpoint allows a member to borrow a book from the library
-    
-#     **Parameters**:
-#     -request: Borrow request including the name of the member and the title of the book
-#     -requests: HTTP request containing the member token
-    
-#     **Returns**:
-#     -A success message if the book is borrowed successfully
-#     -An error message if the book is not available or the member is not found
-    
-#     """
-#     token = member_token(requests)
-#     try:
-#         members_data = load_data("member.json")
-#         if not isinstance(members_data, list):
-#             raise HTTPException(status_code=500, detail="Invalid member data format")
-        
-#         member = next((member for member in members_data if member.get("name") == request.name), None)
-#         if not member:
-#             raise HTTPException(status_code=404, detail="Member not found")
 
-#         books_data = load_data("books.json")
-#         if not isinstance(books_data, list):
-#             raise HTTPException("Invalid books data format")
-        
-#         book = next((book for book in books_data if book.get("title") == request.title), None)
-#         if not book:
-#             raise HTTPException("Book not found")
-        
-#         stock = int(book.get("stock", 0))
-#         if stock <= 0:
-#             raise HTTPException("Book is out of stock")
-        
-#         book["stock"] = stock - 1  
-#         save_data("books.json", books_data)
-        
-#         borrow_log = {
-#             "name": request.name,
-#             "title": request.title,
-#             "borrow_date": datetime.now().strftime("%Y-%m-%d"),
-#             "expiry_date": (datetime.now() + timedelta(days=15)).strftime("%Y-%m-%d")  # 15-day return period
-#         }
-        
-#         borrow_logs = load_data("borrow_logs.json")
-#         if not isinstance(borrow_logs, list):
-#             borrow_logs = []
-#         borrow_logs.append(borrow_log)
-#         save_data("borrow_logs.json", borrow_logs)
-#         return {"message": "Book borrowed successfully", "borrow_log": borrow_log}
+@app.post("/borrow/", dependencies=[Depends(JWTBearer())])
+def borrow_book(
+    book_body: BorrowBookRequest,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    # Get member from database
+    book_title = book_body.book_title
+    member = db.query(Member).filter(Member.member_id == current_user["user_id"]).first()
+    if not member:
+        raise HTTPException(
+            status_code=400,
+            detail="Member not found"
+        )
     
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    # Check if book exists and is available
+    book = db.query(Book).filter(Book.title == book_title).first()
+    if not book:
+        raise HTTPException(
+            status_code=404,
+            detail="Book not found"
+        )
+    
+    availability = db.query(BookAvailability).filter(BookAvailability.book_id == book.id).first()
+    if not availability or not availability.available:
+        raise HTTPException(
+            status_code=400,
+            detail="Book is not available for borrowing"
+        )
+    
+    # Check if member already borrowed this book
+    existing_borrow = db.query(BorrowedBooks).filter(
+        BorrowedBooks.member_id == member.member_id,
+        BorrowedBooks.book_id == book.id
+    ).first()
+    
+    if existing_borrow:
+        raise HTTPException(
+            status_code=400,
+            detail="You have already borrowed this book"
+        )
+    
+    # Calculate expiry date (2 weeks from now)
+    borrow_date = datetime.now()
+    expiry_date = borrow_date + timedelta(weeks=2)
+    
+    # Create borrowed book record
+    borrowed_book = BorrowedBooks(
+        title=book.title,
+        member_id=member.member_id,
+        book_id=book.id,
+        name=member.name,
+        borrow_date=borrow_date,
+        expiry_date=expiry_date
+    )
+    
+    # Update book availability
+    availability.available = False
+    book.stock -= 1
+    
+    if book.stock <= 0:
+        book.available = False
     
     
-# @app.post("/member/return_book")
-# def return_books(request: BorrowRequest, requests: Request):
+    db.add(borrowed_book)
+    db.commit()
+    db.refresh(borrowed_book)
+   
+    return {
+        "message": "Book borrowed successfully",
+        "book_title": book.title,
+        "borrow_date": borrow_date,
+        "expiry_date": expiry_date
+    }
+
+
+
+     
+@app.post("/member/return_book", dependencies=[Depends(JWTBearer())])
+def return_books( book_body: ReturnBookRequest,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
 #     """
 #     Return a book
     
@@ -291,50 +315,44 @@ def members(memberLogin: MemberLogin ,db: Session = Depends(get_db))-> dict:
 #     -A success message if the book is returned successfully
 #     -An error message if the book is not borrowed or the member is not found
 #     """
-#     tokens = member_token(requests)
-#     try:
-#         members_data = load_data("member.json")
-#         if not isinstance(members_data, list):
-#             raise HTTPException(status_code=500, detail="Invalid member data format")
-        
-#         member = next((members for members_return in members_data if members_return.get("name" ) == request.name), None)
-#         if not member:
-#             raise HTTPException(status_code=404, detail="Member not found")
-        
-#         borrow_logs = load_data("borrow_logs.json")
-#         if not isinstance(borrow_logs, list):
-#             borrow_logs = []
 
-#         borrowed_book = next(
-#             (log for log in borrow_logs if log.get("name") == request.name and log.get("title") == request.title),
-#             None
-#         )
-#         if not borrowed_book:
-#             raise HTTPException(status_code=400, detail="You did not borrow this book")
-
-#         books_data = load_data("books.json")
-#         if not isinstance(books_data, list):
-#             raise HTTPException("Invalid books data format")
-        
-#         book = next((book for book in books_data if book.get("title") == request.title), None)
+    # Get member from database
+    book_title = book_body.book_title
+    member = db.query(Member).filter(Member.member_id == current_user["user_id"]).first()
+    if not member:
+        raise HTTPException(
+            status_code=400,
+            detail="Member not found"
+        )
+    
+    # Check if book exists and is available
+    book = db.query(Book).filter(Book.title == book_title).first()
+    if not book:
+        raise HTTPException(
+            status_code=404,
+            detail="Book not found"
+        )
+    # Calculate expiry date (2 weeks from now)
+    return_date = datetime.now()
+    
+    # Create borrowed book record
+    borrowed_book = BorrowedBooks(
+        title=book.title,
+        member_id=member.member_id,
+        book_id=book.id,
+        name=member.name,
+        return_date=return_date
+    
+    )
+    
+    book.stock -= 1
+    db.add(borrowed_book)
+    db.commit()
+    db.refresh(borrowed_book)
+   
+    return {
+        "message": "Book returned successfully",
+        "book_title": book.title,
+        "return_date": return_date
        
-#         stock = int(book.get("stock", 0))
-#         book["stock"] = stock + 1  
-#         save_data("books.json", books_data)
-        
-#         return_log = {
-#             "name": request.name,
-#             "title": request.title,
-#             "return_date": datetime.now().strftime("%Y-%m-%d"),
-#         }
-#         borrow_logs = load_data("return_logs.json")
-#         if not isinstance(borrow_logs, list):
-#             borrow_logs = []
-#         borrow_logs.append(return_log)
-#         save_data("return_logs.json", borrow_logs)
-        
-#         return {"message": "Book return successfully", "return_log": return_log}
-    
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-    
+    }
