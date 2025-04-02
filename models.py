@@ -38,6 +38,7 @@ class Book(Base):
     availability = relationship("BookAvailability", back_populates="book", uselist=False)
     
     borrowed_books = relationship("BorrowedBooks", back_populates="book")
+    returned_books = relationship("ReturnBook", back_populates="book")  
 
     
 class Member(Base):
@@ -49,6 +50,8 @@ class Member(Base):
     password = Column(String, nullable=False)
     
     borrowed_books = relationship("BorrowedBooks", back_populates="member")
+    returned_books = relationship("ReturnBook", back_populates="member")
+
 
   
 
@@ -104,8 +107,9 @@ class ReturnBook(Base):
     
     return_date = Column(DateTime, default=datetime.now)
     
-    member = relationship("Member", back_populates="borrowed_books")
-    book = relationship("Book", back_populates="borrowed_books")
+    member = relationship("Member", back_populates="returned_books")
+    book = relationship("Book", back_populates="returned_books")
+
     
     
 

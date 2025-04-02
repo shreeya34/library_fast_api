@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 from schema import   BorrowBookRequest, CreateModel,AdminLogins, MembersListResponse,NewMember,NewBooks,MemberLogin, MemberResponse, ReturnBookRequest
 from sqlalchemy.orm import Session
 from sql import get_db,init_db
-from models import Admin,AdminLogin,Book, BookAvailability, BorrowedBooks, Member, MemberLogins
-from handlers.users import add_admin,get_admins, add_user_books, get_borrowed_books_data, get_member, member_logins, view_all_members, view_avilable_books
+from models import Admin,AdminLogin,Book, BookAvailability, BorrowedBooks, Member, MemberLogins, ReturnBook
+from handlers.users import add_admin,get_admins, add_user_books, get_borrowed_books_data, get_member, get_returned_books_data, member_logins, view_all_members, view_avilable_books
 from handlers.exception_handlers import app
 from auth.auth_utils import get_token_from_request
 from handlers.exception_handlers.app import register_middleware
@@ -233,9 +233,6 @@ def borrow_book(
         raise HTTPException(status_code=400,detail="Unable to borrow books,please check it")
         
 
-
-
-
      
 @app.post("/member/return_book", dependencies=[Depends(JWTBearer())])
 def return_books( book_body: ReturnBookRequest,current_user: dict = Depends(get_current_user),db: Session = Depends(get_db)) -> dict:
@@ -253,43 +250,9 @@ def return_books( book_body: ReturnBookRequest,current_user: dict = Depends(get_
     -An error message if the book is not borrowed or the member is not found
     """
 
-    # Get member from database
-    book_title = book_body.book_title
-    member = db.query(Member).filter(Member.member_id == current_user["user_id"]).first()
-    if not member:
-        raise HTTPException(
-            status_code=400,
-            detail="Member not found"
-        )
-    
-    # Check if book exists and is available
-    book = db.query(Book).filter(Book.title == book_title).first()
-    if not book:
-        raise HTTPException(
-            status_code=404,
-            detail="Book not found"
-        )
-    # Calculate expiry date (2 weeks from now)
-    return_date = datetime.now()
-    
-    # Create borrowed book record
-    borrowed_book = BorrowedBooks(
-        title=book.title,
-        member_id=member.member_id,
-        book_id=book.id,
-        name=member.name,
-        return_date=return_date
-    
-    )
-    
-    book.stock -= 1
-    db.add(borrowed_book)
-    db.commit()
-    db.refresh(borrowed_book)
-   
-    return {
-        "message": "Book returned successfully",
-        "book_title": book.title,
-        "return_date": return_date
-       
-    }
+    returned_books = get_returned_books_data(book_body,current_user,db)
+    if returned_books:
+        return JSONResponse(status_code=201, content={"message": "Book returned successfully", "returned_books": returned_books})
+    else:
+        raise HTTPException(status_code=400,detail="Unable to return books,please check it")
+        
