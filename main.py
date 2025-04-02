@@ -12,7 +12,7 @@ from schema import   BorrowBookRequest, CreateModel,AdminLogins, MembersListResp
 from sqlalchemy.orm import Session
 from sql import get_db,init_db
 from models import Admin,AdminLogin,Book, BookAvailability, BorrowedBooks, Member, MemberLogins
-from handlers.users import add_admin,get_admins, add_user_books, get_member, member_logins, view_all_members, view_avilable_books
+from handlers.users import add_admin,get_admins, add_user_books, get_borrowed_books_data, get_member, member_logins, view_all_members, view_avilable_books
 from handlers.exception_handlers import app
 from auth.auth_utils import get_token_from_request
 from handlers.exception_handlers.app import register_middleware
@@ -225,96 +225,33 @@ def borrow_book(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    # Get member from database
-    book_title = book_body.book_title
-    member = db.query(Member).filter(Member.member_id == current_user["user_id"]).first()
-    if not member:
-        raise HTTPException(
-            status_code=400,
-            detail="Member not found"
-        )
     
-    # Check if book exists and is available
-    book = db.query(Book).filter(Book.title == book_title).first()
-    if not book:
-        raise HTTPException(
-            status_code=404,
-            detail="Book not found"
-        )
-    
-    availability = db.query(BookAvailability).filter(BookAvailability.book_id == book.id).first()
-    if not availability or not availability.available:
-        raise HTTPException(
-            status_code=400,
-            detail="Book is not available for borrowing"
-        )
-    
-    # Check if member already borrowed this book
-    existing_borrow = db.query(BorrowedBooks).filter(
-        BorrowedBooks.member_id == member.member_id,
-        BorrowedBooks.book_id == book.id
-    ).first()
-    
-    if existing_borrow:
-        raise HTTPException(
-            status_code=400,
-            detail="You have already borrowed this book"
-        )
-    
-    # Calculate expiry date (2 weeks from now)
-    borrow_date = datetime.now()
-    expiry_date = borrow_date + timedelta(weeks=2)
-    
-    # Create borrowed book record
-    borrowed_book = BorrowedBooks(
-        title=book.title,
-        member_id=member.member_id,
-        book_id=book.id,
-        name=member.name,
-        borrow_date=borrow_date,
-        expiry_date=expiry_date
-    )
-    
-    # Update book availability
-    availability.available = False
-    book.stock -= 1
-    
-    if book.stock <= 0:
-        book.available = False
-    
-    
-    db.add(borrowed_book)
-    db.commit()
-    db.refresh(borrowed_book)
-   
-    return {
-        "message": "Book borrowed successfully",
-        "book_title": book.title,
-        "borrow_date": borrow_date,
-        "expiry_date": expiry_date
-    }
+    borrowed_books = get_borrowed_books_data(book_body,current_user,db)
+    if borrowed_books:
+        return JSONResponse(status_code=201, content={"message": "Book borrowed successfully", "borrowed_books": borrowed_books})
+    else:
+        raise HTTPException(status_code=400,detail="Unable to borrow books,please check it")
+        
+
 
 
 
      
 @app.post("/member/return_book", dependencies=[Depends(JWTBearer())])
-def return_books( book_body: ReturnBookRequest,
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-) -> dict:
-#     """
-#     Return a book
+def return_books( book_body: ReturnBookRequest,current_user: dict = Depends(get_current_user),db: Session = Depends(get_db)) -> dict:
+    """
+    Return a book
     
-#     This endpoint allows a member to return a book to the library
+    This endpoint allows a member to return a book to the library
     
-#     **Parameters**:
-#     -request: Borrow request including the name of the member and the title of the book
-#     -requests: HTTP request containing the member token
+    **Parameters**:
+    -request: Borrow request including the name of the member and the title of the book
+    -requests: HTTP request containing the member token
     
-#     **Returns**:
-#     -A success message if the book is returned successfully
-#     -An error message if the book is not borrowed or the member is not found
-#     """
+    **Returns**:
+    -A success message if the book is returned successfully
+    -An error message if the book is not borrowed or the member is not found
+    """
 
     # Get member from database
     book_title = book_body.book_title

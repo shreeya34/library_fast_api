@@ -5,12 +5,12 @@ import uuid
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from models import Admin, AdminLogin, Book, BookAvailability, BorrowedBooks, Member, MemberLogins,ViewMembers
-from schema import AdminLogins, CreateModel, LoginSchema, MemberLogin, MembersListResponse, NewBooks, NewMember
+from schema import AdminLogins, BorrowBookRequest, BorrowedBookResponse, CreateModel, LoginSchema, MemberLogin, MembersListResponse, NewBooks, NewMember
 from sql import get_db
 from schema import MemberResponse
 from password_hasing import hash_password,check_password
 # from token_1 import create_access_token
-from auth.auth_handler import  signJWT
+from auth.auth_handler import  get_current_user, signJWT
 
 
 def add_admin(user: CreateModel, db: Session) -> bool:
@@ -57,59 +57,59 @@ def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
 #  logging.basicConfig(level=logging.DEBUG)
 # logger = logging.getLogger(__name__)
 # def login(login: LoginSchema, db: Session = Depends(get_db)):
-    user = None
-    role = None
-    try:
-        # Check if the user is an Admin
-        admin = db.query(Admin).filter(Admin.name == login.name).first()
-        if admin:
-            user = admin
-            role = "admin"
+    # user = None
+    # role = None
+    # try:
+    #     # Check if the user is an Admin
+    #     admin = db.query(Admin).filter(Admin.name == login.name).first()
+    #     if admin:
+    #         user = admin
+    #         role = "admin"
 
-        # Check if the user is a Member
-        member = db.query(Member).filter(Member.name == login.name).first()
-        if member:
-            user = member
-            role = "member"
+    #     # Check if the user is a Member
+    #     member = db.query(Member).filter(Member.name == login.name).first()
+    #     if member:
+    #         user = member
+    #         role = "member"
 
-        # If no user found or incorrect password
-        if not user or not check_password(login.password, user.password):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+    #     # If no user found or incorrect password
+    #     if not user or not check_password(login.password, user.password):
+    #         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        access_token = signJWT(member.name,member.member_id)
+    #     access_token = signJWT(member.name,member.member_id)
 
         
-        login_entry = AdminLogin if role == "admin" else MemberLogins
+    #     login_entry = AdminLogin if role == "admin" else MemberLogins
 
-        member_id = user.admin_id if role == "admin" else user.member_id
+    #     member_id = user.admin_id if role == "admin" else user.member_id
 
-        # Create new login entry
-        new_login = login_entry(
-            name=login.name, 
-            status="success", 
-            login_time=datetime.utcnow(),
-            password=login.password,  # Ideally, avoid storing password in the login entry
-            member_id=member_id  # Correctly assigning the right member_id based on role
-        )
+    #     # Create new login entry
+    #     new_login = login_entry(
+    #         name=login.name, 
+    #         status="success", 
+    #         login_time=datetime.utcnow(),
+    #         password=login.password,  # Ideally, avoid storing password in the login entry
+    #         member_id=member_id  # Correctly assigning the right member_id based on role
+    #     )
 
-        # Add and commit the login entry to the database
-        db.add(new_login)
-        db.commit()
-        db.refresh(new_login)
+    #     # Add and commit the login entry to the database
+    #     db.add(new_login)
+    #     db.commit()
+    #     db.refresh(new_login)
         
-        # Return successful login response
-        return {
-            "message": "Login successful",
-            "token": access_token,
-            "id": member_id,
-            "role": role
-        }
+    #     # Return successful login response
+    #     return {
+    #         "message": "Login successful",
+    #         "token": access_token,
+    #         "id": member_id,
+    #         "role": role
+    #     }
     
-    except Exception as e:
-        import traceback
-        print(f"Error: {e}")
-        print(traceback.format_exc())  # Capture stack trace for debugging
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+    # except Exception as e:
+    #     import traceback
+    #     print(f"Error: {e}")
+    #     print(traceback.format_exc())  # Capture stack trace for debugging
+    #     raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 def get_current_users(request: Request, db: Session):
     user_id = request.headers.get("user_id")  # Extract user ID from headers
@@ -280,4 +280,72 @@ def member_logins(memberLogin: MemberLogin, db: Session = Depends(get_db)) -> di
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
 
+
+def get_borrowed_books_data(
+    book_body: BorrowBookRequest,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    book_title = book_body.book_title
     
+    member = db.query(Member).filter(Member.member_id == current_user["user_id"]).first()
+    if not member:
+        raise HTTPException(status_code=400, detail="Member not found")
+    
+    book = db.query(Book).filter(Book.title == book_title).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    
+    availability = db.query(BookAvailability).filter(BookAvailability.book_id == book.id).first()
+    
+    if not availability:
+        availability = BookAvailability(book_id=book.id, title=book.title, available=True)
+        db.add(availability)
+        db.commit()
+        db.refresh(availability)
+    
+    # Now check availability
+    if not availability.available:
+        raise HTTPException(status_code=400, detail="Book is not available for borrowing")
+    
+    # Debug: Check existing borrowed records
+    existing_borrow = db.query(BorrowedBooks).filter(
+        BorrowedBooks.member_id == str(member.member_id),  # Ensure matching type
+        BorrowedBooks.book_id == book.id
+    ).first()
+    
+    if existing_borrow:
+        print(f"Existing borrow record found: {existing_borrow.__dict__}")  # Debugging
+        raise HTTPException(status_code=400, detail="You have already borrowed this book")
+    
+    # Ensure book stock is available
+    if book.stock <= 0:
+        raise HTTPException(status_code=400, detail="Book is out of stock")
+    
+    # Set borrow and expiry dates
+    borrow_date = datetime.now()
+    expiry_date = borrow_date + timedelta(weeks=2)
+    
+    # Create borrow record
+    borrowed_book = BorrowedBooks(
+        title=book.title,
+        member_id=member.member_id,
+        book_id=book.id,
+        name=member.name,
+        borrow_date=borrow_date,
+        expiry_date=expiry_date
+    )
+    
+    book.stock -= 1
+    availability.available = book.stock > 0
+    
+    db.add(borrowed_book)
+    db.commit()
+    db.refresh(borrowed_book)
+    
+    return {
+        "message": "Book borrowed successfully",
+        "book_title": book.title,
+        "borrow_date": borrow_date,
+        "expiry_date": expiry_date
+    }
