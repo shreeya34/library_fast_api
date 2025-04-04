@@ -11,7 +11,7 @@ engine = create_engine(DB_URL)
 Sessionlocal = sessionmaker(bind=engine)
 
 def init_db():
-    from models import Admin,AdminLogin
+    from library_fast_api.models import Admin,AdminLogin
     Base.metadata.create_all(engine)  
     print("Tables created successfully!")
 

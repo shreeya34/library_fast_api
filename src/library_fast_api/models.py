@@ -1,9 +1,26 @@
 from datetime import datetime
-from sqlalchemy import TIMESTAMP, UUID, Column, ForeignKey, Integer, String, Boolean, DateTime
-from sql import Base
+from sqlalchemy import TIMESTAMP, UUID, Column, Enum, ForeignKey, Integer, String, Boolean, DateTime
+from database.sql import Base
 import uuid
 from sqlalchemy.orm import relationship
 
+
+class User(Base):
+    __tablename__ = 'users'
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    member_id = Column(String, nullable=True) 
+    status = Column(String, nullable=False)
+    password = Column(String, nullable=False) 
+    login_time = Column(TIMESTAMP, nullable=True)
+
+
+
+
+class RoleEnum(str, Enum):
+    admin = 'admin'
+    member = 'member'
 
 class Admin(Base):
     __tablename__ = 'admin'
@@ -12,6 +29,7 @@ class Admin(Base):
     admin_id = Column(String, unique=True, nullable=False) 
     name = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
+    role = Column(String, nullable=False)  
     
     
 class AdminLogin(Base):
@@ -77,10 +95,12 @@ class MemberLogins(Base):
     __tablename__='member_logins'
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name=Column(String,nullable=False)
-    member_id = Column(String, nullable=False)  
+    member_id = Column(String, nullable=True)  
     status=Column(String,nullable=False)
     password = Column(String,nullable=False)
     login_time = Column(TIMESTAMP, nullable=True)
+    
+   
       
 
 class BorrowedBooks(Base):

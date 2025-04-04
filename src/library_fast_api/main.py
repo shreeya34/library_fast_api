@@ -1,51 +1,34 @@
-import json
-from argon2 import PasswordHasher
 from fastapi.responses import JSONResponse
-# from database import Admin
 from auth.auth_bearer import JWTBearer
 from auth.auth_handler import get_current_user
-from data_handling import load_data, save_data
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-import uuid 
-from datetime import datetime, timedelta
-from schema import   BorrowBookRequest, CreateModel,AdminLogins, MembersListResponse,NewMember,NewBooks,MemberLogin, MemberResponse, ReturnBookRequest
+from library_fast_api.schema import   BorrowBookRequest, CreateModel,AdminLogins, LoginSchema, MembersListResponse,NewMember,NewBooks,MemberLogin, ReturnBookRequest
 from sqlalchemy.orm import Session
-from sql import get_db,init_db
-from models import Admin,AdminLogin,Book, BookAvailability, BorrowedBooks, Member, MemberLogins, ReturnBook
-from handlers.users import add_admin,get_admins, add_user_books, get_borrowed_books_data, get_member, get_returned_books_data, member_logins, view_all_members, view_avilable_books
-from handlers.exception_handlers import app
-from auth.auth_utils import get_token_from_request
-from handlers.exception_handlers.app import register_middleware
-from handlers.users import get_current_users
+from database.sql import get_db,init_db
+from library_fast_api.users import add_admin,get_admins, add_user_books, get_borrowed_books_data, get_member, get_returned_books_data, login_data, member_logins, view_all_members, view_available_books
+# from handlers.exception_handlers.app import register_middleware
+# from handlers.users import get_current_users
 
 
 app = FastAPI()
 
-register_middleware(app)
+# register_middleware(app)
 
 
 init_db()
 
 
 
-def token(request: Request, db: Session = Depends(get_db)):
-    print(f"Request Headers: {request.headers}")
-    
-    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
 
-    if not auth_header or "Bearer " not in auth_header:
-        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
+@app.post("/logins/")
+def logins(login: LoginSchema, db: Session = Depends(get_db)):
+    login_result=login_data(login, db)
+    if login_result:
+        return JSONResponse(status_code=200, content={"message": "Login Success", "id": login_result["id"],"token": login_result["token"]})
+    else:
+        return {"error": "Invalid credentials"}  
+    
 
-    token = auth_header.replace("Bearer ", "").strip()
-    print(f"Received token: {token}")
-    
-    # Query the AdminLogin model using the db session
-    admin = db.query(AdminLogin).filter(AdminLogin.member_id == token).first()
-    
-    if admin:
-        return True  # Token valid
-    
-    raise HTTPException(status_code=403, detail="Invalid token")
 
 @app.post("/admin/")
 def create_admin(user: CreateModel, db: Session = Depends(get_db))-> dict:
@@ -142,7 +125,7 @@ def view_books(request: Request, db: Session = Depends(get_db)):
     
     """
    
-    viewBooks= view_avilable_books(request, db)
+    viewBooks= view_available_books(request, db)
     
     if viewBooks:
         return JSONResponse(status_code=200, content=viewBooks)
@@ -187,35 +170,7 @@ def members(memberLogin: MemberLogin ,db: Session = Depends(get_db))-> dict:
         return {"error": "Invalid credentials"}        
     
 
-def member_token(request: Request):
-    """
-    Validate the member token
-    
-    **Paremeters**:
-    -request: HTTP request containing the member token
-    
-    **Returns**:
-    -A success message if the token is valid
-    -An error message if the token is invalid
 
-    """
-    print(f"Request Headers: {request.headers}")
-    
-    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
-
-    if not auth_header or "Bearer " not in auth_header:
-        raise HTTPException(status_code=401, detail="No token received or incorrect format!")
-
-    token = auth_header.replace("Bearer ", "").strip()
-    print(f"Received token: {token}")
-
-    member_data = load_data("member.json")
-    
-    if isinstance(member_data, list):
-        for member in member_data: 
-            if isinstance(member, dict) and "member_id" in member and member["member_id"] == token:
-                return {"message":"hello"} 
-    raise HTTPException(status_code=403, detail="Invalid token")
 
 
 
