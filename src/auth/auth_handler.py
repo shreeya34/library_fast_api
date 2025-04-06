@@ -9,27 +9,29 @@ import os
 load_dotenv()
 
 
-JWT_SECRET =  os.getenv('JWT_SECRET_KEY')
-JWT_ALGORITHM =  os.getenv('JWT_ALGORITHM')
+JWT_SECRET = os.getenv("JWT_SECRET_KEY")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+
 
 def token_response(token: str):
-    return {
-        "access_token": token
-    }
+    return {"access_token": token}
 
-def signJWT(name: str,user_id: str) -> Dict[str, str]:
+
+def signJWT(name: str, user_id: str, is_admin: bool = False) -> Dict[str, str]:
     payload = {
         "user_id": user_id,
-        "name":name,
-        "expires": time.time() + 86400 
+        "name": name,
+        "is_admin": is_admin,
+        "expires": time.time() + 86400,
     }
     jwt_token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token_response(jwt_token)
 
+
 def decode_jwt(token: str) -> dict:
     try:
         decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        
+
         # Check if the token is expired
         if decoded_token["expires"] >= time.time():
             return decoded_token
@@ -41,18 +43,20 @@ def decode_jwt(token: str) -> dict:
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-def get_current_user(authorization: str = Header(None)):
-    if authorization is None:
-        raise HTTPException(status_code=401, detail="Token is missing")
-    
+
+def get_current_user(authorization: str = Header(...)) -> dict:
     try:
-        token = authorization.split("Bearer ")[-1]
-        
-        decoded_token = decode_jwt(token)
-        
-        if not decoded_token:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-        
-        return decoded_token
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Error: {str(e)}")
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid token scheme")
+
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
+        return {
+            "username": payload.get("name"),     
+            "is_admin": payload.get("is_admin"),
+            "admin_id": payload.get("user_id"),  
+        }
+
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")

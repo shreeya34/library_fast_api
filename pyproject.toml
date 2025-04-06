@@ -15,6 +15,7 @@ dependencies = [
     "python-decouple>=3.8",
     "psycopg2>=2.9.10",
     "psycopg2-binary>=2.9.10",
+    "black>=25.1.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -34,5 +35,5 @@ allow-direct-references = true
 packages = ["src/library_fast_api"]
 
 [tool.rye.scripts]
-main = "fastapi dev src/library_fast_api/main.py"
+main = "fastapi dev src/main.py"
 

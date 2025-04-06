@@ -9,3 +9,6 @@ wheels/
 # venv
 .venv
 .env
+zz/
+log_file/
+.vscode/

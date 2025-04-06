@@ -3,60 +3,42 @@ from pydantic import BaseModel
 from typing import List
 
 
-
-    
 class CreateModel(BaseModel):
-    name: str
+    username: str
     password: str
-    
+
+
 class AdminLogins(BaseModel):
-    name: str
+    username: str
     status: str
     password: str
-    
 
-    
+
 class NewMember(BaseModel):
     name: str
     role: str
-    password: str 
+    password: str
 
 
 class NewBooks(BaseModel):
-    title:str
-    author:str
-    stock:int
+    title: str
+    author: str
+    stock: int
 
-class MemberResponse(BaseModel):
-    name: str
-    role: str
-    member_id: str
-
-class MembersListResponse(BaseModel):
-    filtered_members:List[MemberResponse]
 
 class MemberLogin(BaseModel):
     name: str
     password: str
-    
 
-    
+
 class ReturnBookRequest(BaseModel):
     book_title: str
-    
+
 
 class BorrowBookRequest(BaseModel):
     book_title: str
- 
-class BorrowedBookResponse(BaseModel):
-    title: str
-    member_id: str
-    name: str
-    borrow_date: datetime
-    expiry_date: datetime
-    
-    
-    
+
+
 class LoginSchema(BaseModel):
     name: str
     password: str

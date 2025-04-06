@@ -20,12 +20,15 @@ argon2-cffi==23.1.0
     # via library-fast-api
 argon2-cffi-bindings==21.2.0
     # via argon2-cffi
+black==25.1.0
+    # via library-fast-api
 certifi==2025.1.31
     # via httpcore
     # via httpx
 cffi==1.17.1
     # via argon2-cffi-bindings
 click==8.1.8
+    # via black
     # via rich-toolkit
     # via typer
     # via uvicorn
@@ -60,6 +63,14 @@ markupsafe==3.0.2
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
+mypy-extensions==1.0.0
+    # via black
+packaging==24.2
+    # via black
+pathspec==0.12.1
+    # via black
+platformdirs==4.3.7
+    # via black
 psycopg2==2.9.10
     # via library-fast-api
 psycopg2-binary==2.9.10
