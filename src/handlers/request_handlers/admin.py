@@ -57,7 +57,22 @@ def add_admin(user: CreateModel, db: Session) -> bool:
     db.add(new_admin)
     db.commit()
     db.refresh(new_admin)
-    logger.info("New admin added: %s", user.username)
+    # logger.info("New admin added: %s", user.username)
+    
+    new_member = Member(
+        member_id=admin_id,  
+        name=user.username,
+        password=hashed_password,  
+        role="admin",  
+    )
+
+    db.add(new_member)
+    db.commit()
+    db.refresh(new_member)
+
+    logger.info("New admin and member added: %s", user.username)
+
+    return new_admin
 
     return new_admin
 
