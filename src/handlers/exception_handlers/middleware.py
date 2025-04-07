@@ -4,7 +4,6 @@ from starlette.responses import JSONResponse
 from library_fast_api.logger.logger import logger
 
 
-
 class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         try:
@@ -12,7 +11,11 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
             return response
         except HTTPException as exc:
             logger.warning(f"HTTPException: {exc.detail}")
-            return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+            return JSONResponse(
+                status_code=exc.status_code, content={"detail": exc.detail}
+            )
         except Exception as exc:
             logger.error(f"Internal Server Error: {str(exc)}", exc_info=True)
-            return JSONResponse(status_code=500, content={"detail": "An internal error occurred."})
+            return JSONResponse(
+                status_code=500, content={"detail": "An internal error occurred."}
+            )

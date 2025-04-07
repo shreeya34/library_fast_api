@@ -11,7 +11,6 @@ from models.request_models import (
     BorrowBookRequest,
     CreateModel,
     AdminLogins,
-    LoginSchema,
     NewMember,
     NewBooks,
     MemberLogin,
@@ -32,7 +31,7 @@ from handlers.request_handlers.admin import (
     view_all_members,
     view_available_books,
 )
-from models.response_models import MembersListResponse
+from models.response_models import BorrowedBookResponse, MembersListResponse
 from library_fast_api.logger.logger import get_logger
 
 
@@ -42,8 +41,6 @@ app = FastAPI()
 
 init_db()
 app.add_middleware(ExceptionHandlerMiddleware)
-
-
 
 
 @app.post("/admin/")
@@ -92,7 +89,10 @@ def login_admin(logins: AdminLogins, db: Session = Depends(get_db)) -> dict:
 
 @app.post("/add_member", dependencies=[Depends(JWTBearer())], tags=["add_member"])
 def add_member(
-    request: Request, newuser: NewMember, db: Session = Depends(get_db),user: dict = Depends(get_current_user)
+    request: Request,
+    newuser: NewMember,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     """
     Add a new member to the library system
@@ -105,7 +105,7 @@ def add_member(
 
     """
 
-    members = get_member(request, newuser, db,user)
+    members = get_member(request, newuser, db, user)
     if members:
         return JSONResponse(
             status_code=201,
@@ -115,7 +115,10 @@ def add_member(
 
 @app.post("/add_books", dependencies=[Depends(JWTBearer())], tags=["add_books"])
 def add_books(
-    request: Request, newbook: NewBooks, db: Session = Depends(get_db),user: dict = Depends(get_current_user)
+    request: Request,
+    newbook: NewBooks,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     """
     Add or update a book in the system.
@@ -129,7 +132,7 @@ def add_books(
     """
     # admin_token = token(request, db)
 
-    result = add_user_books(request, newbook, db,user)
+    result = add_user_books(request, newbook, db, user)
 
     # Check if the book exists and was updated
     if "new_book" in result:
@@ -139,7 +142,11 @@ def add_books(
 @app.get(
     "/view_available_books", dependencies=[Depends(JWTBearer())], tags=["view_books"]
 )
-def view_books(request: Request, db: Session = Depends(get_db),user: dict = Depends(get_current_user)):
+def view_books(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
     """
     View available books in the library
 
@@ -153,7 +160,7 @@ def view_books(request: Request, db: Session = Depends(get_db),user: dict = Depe
 
     """
 
-    viewBooks = view_available_books(request, db,user)
+    viewBooks = view_available_books(request, db, user)
 
     if viewBooks:
         return JSONResponse(status_code=200, content=viewBooks)
@@ -163,9 +170,13 @@ def view_books(request: Request, db: Session = Depends(get_db),user: dict = Depe
     "/view_members",
     response_model=MembersListResponse,
     dependencies=[Depends(JWTBearer())],
-    tags=["view_members"]
+    tags=["view_members"],
 )
-def view_members(request: Request, db: Session = Depends(get_db),user: dict = Depends(get_current_user)):
+def view_members(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
     """
     View all members
 
@@ -178,7 +189,7 @@ def view_members(request: Request, db: Session = Depends(get_db),user: dict = De
     - A list of members
     """
 
-    return view_all_members(request, db,user)
+    return view_all_members(request, db, user)
 
 
 @app.post("/member/login")
@@ -198,36 +209,43 @@ def members(memberLogin: MemberLogin, db: Session = Depends(get_db)) -> dict:
     """
     login_member = member_logins(memberLogin, db)
     if login_member:
-        
-            content={
+
+        content = (
+            {
                 "message": "Login Success",
                 "admin_id": login_member["member_id"],
                 "token": login_member["token"],
             },
-            return JSONResponse(status_code=200, content=content)
+        )
+        return JSONResponse(status_code=200, content=content)
 
-        
     else:
         return {"error": "Invalid credentials"}
 
 
-@app.post("/borrow/", dependencies=[Depends(JWTBearer())])
+@app.post(
+    "/borrow/", response_model=BorrowedBookResponse, dependencies=[Depends(JWTBearer())]
+)
 def borrow_book(
     book_body: BorrowBookRequest,
-    # current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db),user: dict = Depends(get_current_user)
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
 
-    borrowed_books = get_borrowed_books_data(book_body, db,user)
+    borrowed_books = get_borrowed_books_data(book_body, db, user)
     if borrowed_books:
-        
-            content={
-                "message": "Book borrowed successfully",
-                "borrowed_books": borrowed_books,
+        content = {
+            "message": "Book borrowed successfully",
+            "borrowed_book": {
+                "title": borrowed_books.title,
+                "member_id": borrowed_books.member_id,
+                "name": borrowed_books.name,
+                "borrow_date": borrowed_books.borrow_date.isoformat(),
+                "expiry_date": borrowed_books.expiry_date.isoformat(),
             },
-            return JSONResponse(status_code=200, content=content)
+        }
+        return JSONResponse(content=content)
 
-        
     else:
         raise HTTPException(
             status_code=400, detail="Unable to borrow books,please check it"
@@ -235,7 +253,11 @@ def borrow_book(
 
 
 @app.post("/member/return_book", dependencies=[Depends(JWTBearer())])
-def return_books(book_body: ReturnBookRequest, db: Session = Depends(get_db),user: dict = Depends(get_current_user)) -> dict:
+def return_books(
+    book_body: ReturnBookRequest,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+) -> dict:
     """
     Return a book
 
@@ -250,14 +272,16 @@ def return_books(book_body: ReturnBookRequest, db: Session = Depends(get_db),use
     -An error message if the book is not borrowed or the member is not found
     """
 
-    returned_books = get_returned_books_data(book_body, db,user)
+    returned_books = get_returned_books_data(book_body, db, user)
     if returned_books:
-     
-            content={
+
+        content = (
+            {
                 "message": "Book returned successfully",
                 "returned_books": returned_books,
             },
-            return JSONResponse(status_code=200, content=content)
+        )
+        return JSONResponse(status_code=200, content=content)
     else:
         raise HTTPException(
             status_code=400, detail="Unable to return books,please check it"

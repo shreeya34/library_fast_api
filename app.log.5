@@ -1,4 +1,4 @@
-2025-04-06 18:45:44,803 - ERROR - Internal Server Error: Object of type datetime is not JSON serializable
+2025-04-06 21:33:21,046 - ERROR - Internal Server Error: Object of type datetime is not JSON serializable
 Traceback (most recent call last):
   File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 147, in call_next
     message = await recv_stream.receive()
@@ -56,9 +56,9 @@ Traceback (most recent call last):
   File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 967, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/samrat/Documents/library_fast_api/src/main.py", line 260, in return_books
-    return JSONResponse(status_code=200, content=content)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/samrat/Documents/library_fast_api/src/main.py", line 226, in borrow_book
+    return JSONResponse(content=borrowed_books.dict())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/responses.py", line 182, in __init__
     super().__init__(content, status_code, headers, media_type, background)
   File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/responses.py", line 45, in __init__

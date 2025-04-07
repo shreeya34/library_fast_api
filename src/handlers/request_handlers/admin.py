@@ -6,7 +6,6 @@ from handlers.exception_handlers.exception_handler import (
     AdminAlreadyExistsError,
     InvalidAdminCredentialsError,
     MemberAlreadyExistsError,
-    
 )
 from database.models import (
     Admin,
@@ -20,7 +19,6 @@ from handlers.request_handlers.response_handlers import json_response
 from models.request_models import (
     AdminLogins,
     CreateModel,
-    LoginSchema,
     NewBooks,
     NewMember,
 )
@@ -57,13 +55,12 @@ def add_admin(user: CreateModel, db: Session) -> bool:
     db.add(new_admin)
     db.commit()
     db.refresh(new_admin)
-    # logger.info("New admin added: %s", user.username)
-    
+
     new_member = Member(
-        member_id=admin_id,  
+        member_id=admin_id,
         name=user.username,
-        password=hashed_password,  
-        role="admin",  
+        password=hashed_password,
+        role="admin",
     )
 
     db.add(new_member)
@@ -74,7 +71,7 @@ def add_admin(user: CreateModel, db: Session) -> bool:
 
     return new_admin
 
-    return new_admin
+   
 
 
 def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
@@ -104,17 +101,15 @@ def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
     }
 
 
-
-
 def add_user_books(
     request: Request,
     newbook: NewBooks,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
-    
+
     if not user.get("is_admin"):
-            raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Access denied")
 
     logger.info(
         f"Admin {user['username']} is attempting to add/update a book: {newbook.title} by {newbook.author}"
@@ -136,7 +131,7 @@ def add_user_books(
             f"Book '{existing_logs.title}' updated successfully by {user['username']}. New stock: {existing_logs.stock}"
         )
 
-        return  {
+        return {
             "message": "Book updated successfully",
             "new_book": {
                 "title": existing_logs.title,
@@ -177,10 +172,10 @@ def get_member(
     newuser: NewMember,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
-):  
-    
+):
+
     if not user.get("is_admin"):
-            raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Access denied")
 
     existing_member = db.query(Member).filter(Member.name == newuser.name).first()
 
@@ -212,10 +207,10 @@ def view_available_books(
     request: Request,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
-):  # Extract user from JWT
+):
 
     if not user.get("is_admin"):
-            raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Access denied")
     books = db.query(Book).all()
 
     if not books:
@@ -251,53 +246,47 @@ def view_available_books(
     return {"message": "Book available", "books": book_data}
 
 
-
 def view_all_members(
     request: Request,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
     if not user.get("is_admin"):
-            raise HTTPException(status_code=403, detail="Access denied")
-    try:
-        logger.info("Fetching all members from the database.")
+        raise HTTPException(status_code=403, detail="Access denied")
 
-        members = db.query(Member).all()
+    logger.info("Fetching all members from the database.")
 
-        if not members:
-            logger.warning("No members found in the system.")
-            return {"message": "No members found in the system"}
+    members = db.query(Member).all()
 
-        for member in members:
-            existing_view_member = (
-                db.query(ViewMembers)
-                .filter(ViewMembers.member_id == member.member_id)
-                .first()
-            )
+    if not members:
+        logger.warning("No members found in the system.")
+        return {"message": "No members found in the system"}
 
-            if not existing_view_member:  # Add only if it doesn't exist
-                new_view_member = ViewMembers(
-                    member_id=member.member_id, name=member.name, role=member.role
-                )
-                db.add(new_view_member)
-
-        db.commit()
-
-        logger.info(f"Successfully processed {len(members)} members.")
-
-        view_members = db.query(ViewMembers).all()
-        member_data = [
-            {
-                "name": view_member.name,
-                "role": view_member.role,
-                "member_id": view_member.member_id,
-            }
-            for view_member in view_members
-        ]
-
-        return MembersListResponse(filtered_members=member_data)
-    except Exception as err:
-        print("Error occurred:", str(err))
-        raise HTTPException(
-            status_code=500, detail="An error occurred while fetching members"
+    for member in members:
+        existing_view_member = (
+            db.query(ViewMembers)
+            .filter(ViewMembers.member_id == member.member_id)
+            .first()
         )
+
+        if not existing_view_member:  # Add only if it doesn't exist
+            new_view_member = ViewMembers(
+                member_id=member.member_id, name=member.name, role=member.role
+            )
+            db.add(new_view_member)
+
+    db.commit()
+
+    logger.info(f"Successfully processed {len(members)} members.")
+
+    view_members = db.query(ViewMembers).all()
+    member_data = [
+        {
+            "name": view_member.name,
+            "role": view_member.role,
+            "member_id": view_member.member_id,
+        }
+        for view_member in view_members
+    ]
+
+    return MembersListResponse(filtered_members=member_data)

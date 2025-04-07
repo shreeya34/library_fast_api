@@ -53,9 +53,9 @@ def get_current_user(authorization: str = Header(...)) -> dict:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
         return {
-            "username": payload.get("name"),     
+            "username": payload.get("name"),
             "is_admin": payload.get("is_admin"),
-            "admin_id": payload.get("user_id"),  
+            "admin_id": payload.get("user_id"),
         }
 
     except ValueError:

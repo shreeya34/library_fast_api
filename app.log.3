@@ -1,4 +1,4 @@
-2025-04-06 21:05:20,314 - ERROR - Internal Server Error: 'username' is an invalid keyword argument for Member
+2025-04-06 21:34:17,716 - ERROR - Internal Server Error: Object of type datetime is not JSON serializable
 Traceback (most recent call last):
   File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 147, in call_next
     message = await recv_stream.receive()
@@ -56,20 +56,26 @@ Traceback (most recent call last):
   File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 967, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/samrat/Documents/library_fast_api/src/main.py", line 62, in create_admin
-    sucess = add_admin(user, db)
-             ^^^^^^^^^^^^^^^^^^^
-  File "/home/samrat/Documents/library_fast_api/src/handlers/request_handlers/admin.py", line 62, in add_admin
-    new_member = Member(
-                 ^^^^^^^
-  File "<string>", line 4, in __init__
-  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py", line 571, in _initialize_instance
-    with util.safe_reraise():
-         ^^^^^^^^^^^^^^^^^^^
-  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
-    raise exc_value.with_traceback(exc_tb)
-  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py", line 569, in _initialize_instance
-    manager.original_init(*mixed[1:], **kwargs)
-  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 2175, in _declarative_constructor
-    raise TypeError(
-TypeError: 'username' is an invalid keyword argument for Member
+  File "/home/samrat/Documents/library_fast_api/src/main.py", line 226, in borrow_book
+    return JSONResponse(content=borrowed_books.dict())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/responses.py", line 182, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/responses.py", line 45, in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/responses.py", line 185, in render
+    return json.dumps(
+           ^^^^^^^^^^^
+  File "/home/samrat/.rye/py/cpython@3.12.9/lib/python3.12/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/home/samrat/.rye/py/cpython@3.12.9/lib/python3.12/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/samrat/.rye/py/cpython@3.12.9/lib/python3.12/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/home/samrat/.rye/py/cpython@3.12.9/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type datetime is not JSON serializable

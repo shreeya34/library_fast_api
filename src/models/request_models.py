@@ -37,8 +37,3 @@ class ReturnBookRequest(BaseModel):
 
 class BorrowBookRequest(BaseModel):
     book_title: str
-
-
-class LoginSchema(BaseModel):
-    name: str
-    password: str

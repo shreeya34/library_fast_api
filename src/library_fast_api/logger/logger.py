@@ -7,7 +7,6 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 
-# Formatter
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 
@@ -15,7 +14,7 @@ logger.addHandler(ch)
 
 log_files = "app.log"
 level = logging.INFO
-file_handler = RotatingFileHandler(log_files, maxBytes=1000, backupCount=5)
+file_handler = RotatingFileHandler(log_files, maxBytes=1000, backupCount=6)
 file_handler.setLevel(level)
 file_handler.setFormatter(formatter)
 

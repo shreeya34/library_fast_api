@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
-from handlers.exception_handlers import app
 from handlers.exception_handlers.exception_handler import (
     BookNotFoundError,
     BookUnavailableError,
@@ -14,6 +13,7 @@ from models.request_models import BorrowBookRequest, MemberLogin, ReturnBookRequ
 from database.sql import get_db
 from auth.auth_handler import get_current_user, signJWT
 from library_fast_api.logger.logger import get_logger
+from models.response_models import BorrowedBookResponse
 
 logger = get_logger()
 
@@ -49,17 +49,17 @@ def member_logins(memberLogin: MemberLogin, db: Session = Depends(get_db)) -> di
     }
 
 
-
 def get_borrowed_books_data(
-    book_body: BorrowBookRequest, db: Session = Depends(get_db), user: dict = Depends(get_current_user),
-
+    book_body: BorrowBookRequest,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     book_title = book_body.book_title
-    user_id = user.get("admin_id") 
+    user_id = user.get("admin_id")
     if not user_id:
         logger.error("Borrow attempt by user without valid user_id in token")
         raise HTTPException(status_code=401, detail="User not authenticated")
-    
+
     member = db.query(Member).filter(Member.member_id == user_id).first()
     if not member:
         logger.error("Borrow attempt by non-existent member: %s", user_id)
@@ -87,37 +87,37 @@ def get_borrowed_books_data(
     db.refresh(borrowed_book)
 
     logger.info("Book borrowed: %s by %s", book.title, member.name)
-    return {
-        "message": "Book borrowed successfully",
-        "book_title": book.title,
-        "name": member.name,
-        "borrow_date": borrow_date.isoformat(),
-        "expiry_date": expiry_date.isoformat(),
-    }
+    return BorrowedBookResponse(
+        title=book.title,
+        member_id=member.member_id,
+        name=member.name,
+        borrow_date=borrow_date.isoformat(),
+        expiry_date=expiry_date.isoformat(),
+    )
 
 
 def get_returned_books_data(
-    book_body: ReturnBookRequest, db: Session = Depends(get_db), user: dict = Depends(get_current_user)
-
+    book_body: ReturnBookRequest,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     book_title = book_body.book_title
-    user_id = user.get("admin_id") 
+    user_id = user.get("admin_id")
     if not user_id:
-        logger.error("Borrow attempt by user without valid user_id in token")
+        logger.error("Return attempt by user without valid user_id in token")
         raise HTTPException(status_code=401, detail="User not authenticated")
-    
+
     member = db.query(Member).filter(Member.member_id == user_id).first()
     if not member:
-        logger.error("Borrow attempt by non-existent member: %s", user_id)
+        logger.error("Return attempt by non-existent member: %s", user_id)
         raise MemberNotFoundError(user_id)
 
     book = db.query(Book).filter(Book.title == book_title).first()
     if not book:
         logger.warning("Return attempt for non-existent book: %s", book_title)
-        raise BookNotFoundError(book_title)  # Custom exception
-
+        raise BookNotFoundError(book_title)
     return_date = datetime.now()
-    borrowed_book = ReturnBook(
+    returned_book = ReturnBook(
         title=book.title,
         member_id=member.member_id,
         book_id=book.id,
@@ -126,9 +126,9 @@ def get_returned_books_data(
     )
 
     book.stock += 1
-    db.add(borrowed_book)
+    db.add(returned_book)
     db.commit()
-    db.refresh(borrowed_book)
+    db.refresh(returned_book)
 
     logger.info("Book returned: %s by %s", book.title, member.name)
 

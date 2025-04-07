@@ -21,3 +21,11 @@ class BorrowedBookResponse(BaseModel):
     name: str
     borrow_date: datetime
     expiry_date: datetime
+
+
+class ReturnedBookResponse(BaseModel):
+    title: str
+    member_id: str
+    name: str
+    borrow_date: datetime
+    expiry_date: datetime
