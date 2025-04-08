@@ -1,0 +1,39 @@
+[project]
+name = "library-fast-api"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "shreeya34", email = "1shreeya2@gmail.com" }
+]
+dependencies = [
+    "fastapi[standard]>=0.115.12",
+    "uvicorn>=0.34.0",
+    "argon2-cffi>=23.1.0",
+    "sqlalchemy>=2.0.40",
+    "pydantic-settings>=2.8.1",
+    "pyjwt>=2.10.1",
+    "python-decouple>=3.8",
+    "psycopg2>=2.9.10",
+    "psycopg2-binary>=2.9.10",
+    "black>=25.1.0",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/library_fast_api"]
+
+[tool.rye.scripts]
+main = "fastapi dev src/main.py"
+

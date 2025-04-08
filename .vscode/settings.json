@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./src/library_fast_api",
+        "./src/passwordhasing"
+    ]
+}
