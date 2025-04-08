@@ -7,7 +7,8 @@ from handlers.exception_handlers.exception_handler import (
     InvalidMemberCredentialsError,
     MemberNotFoundError,
 )
-from database.models import Book, BorrowedBooks, Member, MemberLogins, ReturnBook
+from models.db_member import  BorrowedBooks, MemberLogins, ReturnBook
+from models.db_admin import Book, Member
 from handlers.request_handlers.response_handlers import json_response
 from models.request_models import BorrowBookRequest, MemberLogin, ReturnBookRequest
 from database.sql import get_db
@@ -73,12 +74,13 @@ def get_borrowed_books_data(
     expiry_date = borrow_date + timedelta(weeks=2)
 
     borrowed_book = BorrowedBooks(
+        
         title=book.title,
         member_id=member.member_id,
         book_id=book.id,
         name=member.name,
-        borrow_date=borrow_date,
-        expiry_date=expiry_date,
+        borrow_date=borrow_date.isoformat(),
+        expiry_date=expiry_date.isoformat(),
     )
 
     book.stock -= 1
@@ -88,6 +90,7 @@ def get_borrowed_books_data(
 
     logger.info("Book borrowed: %s by %s", book.title, member.name)
     return BorrowedBookResponse(
+        
         title=book.title,
         member_id=member.member_id,
         name=member.name,

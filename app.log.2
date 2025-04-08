@@ -1,1 +1,57 @@
-2025-04-06 21:35:18,630 - INFO - Book borrowed: young by palistha
+2025-04-08 10:00:19,754 - ERROR - Internal Server Error: 5 validation errors:
+  {'type': 'missing', 'loc': ('response', 'title'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+  {'type': 'missing', 'loc': ('response', 'member_id'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+  {'type': 'missing', 'loc': ('response', 'name'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+  {'type': 'missing', 'loc': ('response', 'borrow_date'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+  {'type': 'missing', 'loc': ('response', 'expiry_date'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+Traceback (most recent call last):
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 147, in call_next
+    message = await recv_stream.receive()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/anyio/streams/memory.py", line 126, in receive
+    raise EndOfStream from None
+anyio.EndOfStream
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/samrat/Documents/library_fast_api/src/handlers/exception_handlers/middleware.py", line 10, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 153, in call_next
+    raise app_exc
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 140, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 327, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/samrat/Documents/library_fast_api/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 176, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'missing', 'loc': ('response', 'title'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+  {'type': 'missing', 'loc': ('response', 'member_id'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+  {'type': 'missing', 'loc': ('response', 'name'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+  {'type': 'missing', 'loc': ('response', 'borrow_date'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+  {'type': 'missing', 'loc': ('response', 'expiry_date'), 'msg': 'Field required', 'input': BorrowBookSuccessResponse(message='Book borrowed successfully', borrowed_book=BorrowedBookResponse(title='young', member_id='8b5ce1e0-b20a-4cf5-811e-7429e8a6dc1a', name='sandhy12', borrow_date=datetime.datetime(2025, 4, 8, 10, 0, 19, 744101), expiry_date=datetime.datetime(2025, 4, 22, 10, 0, 19, 744101)))}
+

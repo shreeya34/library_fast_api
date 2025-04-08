@@ -7,7 +7,7 @@ from handlers.exception_handlers.exception_handler import (
     InvalidAdminCredentialsError,
     MemberAlreadyExistsError,
 )
-from database.models import (
+from models.db_admin import (
     Admin,
     AdminLogin,
     Book,
@@ -35,20 +35,20 @@ from auth.auth_handler import get_current_user
 logger = get_logger()
 
 
-def add_admin(user: CreateModel, db: Session) -> bool:
-    existing_admin = db.query(Admin).filter(Admin.username == user.username).first()
+def add_admin(admin: CreateModel, db: Session) -> bool:
+    existing_admin = db.query(Admin).filter(Admin.username == admin.username).first()
     if existing_admin:
         logger.warning(
-            "Attempt to create an admin that already exists: %s", user.username
+            "Attempt to create an admin that already exists: %s", admin.username
         )
-        raise AdminAlreadyExistsError(user.username)
+        raise AdminAlreadyExistsError(admin.username)
 
     admin_id = str(uuid.uuid4())
-    hashed_password = hash_password(user.password)
+    hashed_password = hash_password(admin.password)
 
     new_admin = Admin(
         admin_id=admin_id,
-        username=user.username,
+        username=admin.username,
         password=hashed_password,
         role="admin",
     )
@@ -58,7 +58,7 @@ def add_admin(user: CreateModel, db: Session) -> bool:
 
     new_member = Member(
         member_id=admin_id,
-        name=user.username,
+        name=admin.username,
         password=hashed_password,
         role="admin",
     )
@@ -67,33 +67,33 @@ def add_admin(user: CreateModel, db: Session) -> bool:
     db.commit()
     db.refresh(new_member)
 
-    logger.info("New admin and member added: %s", user.username)
+    logger.info("New admin and member added: %s", admin.username)
 
     return new_admin
 
    
 
 
-def get_admins(login: AdminLogins, db: Session = Depends(get_db)):
-    admin = db.query(Admin).filter(Admin.username == login.username).first()
-    if not admin or not check_password(login.password, admin.password):
-        logger.warning("Failed admin login attempt: %s", login.username)
-        raise InvalidAdminCredentialsError(login.username)
+def get_admins(admin_data: AdminLogins, db: Session = Depends(get_db)):
+    admin = db.query(Admin).filter(Admin.username == admin_data.username).first()
+    if not admin or not check_password(admin_data.password, admin.password):
+        logger.warning("Failed admin login attempt: %s", admin_data.username)
+        raise InvalidAdminCredentialsError(admin_data.username)
 
     access_token = signJWT(admin.username, admin.admin_id, is_admin=True)
 
     new_login = AdminLogin(
-        username=login.username,
+        username=admin_data.username,
         status="success",
         login_time=datetime.utcnow(),
-        password=login.password,
+        password=admin_data.password,
         member_id=admin.admin_id,
     )
     db.add(new_login)
     db.commit()
     db.refresh(new_login)
 
-    logger.info("Admin logged in: %s", login.username)
+    logger.info("Admin logged in: %s", admin_data.username)
     return {
         "message": "Login successful",
         "token": access_token,

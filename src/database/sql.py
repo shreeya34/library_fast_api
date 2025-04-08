@@ -14,7 +14,7 @@ Sessionlocal = sessionmaker(bind=engine)
 
 
 def init_db():
-    from database.models import Admin, AdminLogin
+    from models.db_admin import Admin, AdminLogin
 
     Base.metadata.create_all(engine)
     print("Tables created successfully!")

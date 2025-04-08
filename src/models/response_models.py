@@ -22,6 +22,10 @@ class BorrowedBookResponse(BaseModel):
     borrow_date: datetime
     expiry_date: datetime
 
+class BorrowBookSuccessResponse(BaseModel):
+    message: str
+    borrowed_book: BorrowedBookResponse
+
 
 class ReturnedBookResponse(BaseModel):
     title: str
