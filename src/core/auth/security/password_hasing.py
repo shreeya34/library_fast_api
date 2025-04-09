@@ -28,5 +28,5 @@ def check_password(password: str, hashed_password: str) -> bool:
 
 
 def generate_random_password(length: int = 12) -> str:
-    characters = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(random.choice(characters) for _ in range(length))
+    characters = string.digits + string.punctuation
+    return "".join(random.choice(characters) for _ in range(length))

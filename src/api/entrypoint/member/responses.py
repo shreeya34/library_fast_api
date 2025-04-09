@@ -1,5 +1,3 @@
-
-
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -10,6 +8,7 @@ class BorrowedBookResponse(BaseModel):
     name: str
     borrow_date: datetime
     expiry_date: datetime
+
 
 class BorrowBookSuccessResponse(BaseModel):
     message: str

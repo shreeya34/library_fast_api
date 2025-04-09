@@ -12,5 +12,4 @@ wheels/
 zz/
 log_file/
 .vscode/
-app.log
-app.log.2
+app_log/

@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from database.settings import settings
+from config.settings import settings
 
 Base = declarative_base()
 
@@ -14,7 +14,7 @@ Sessionlocal = sessionmaker(bind=engine)
 
 
 def init_db():
-    from models.db_admin import Admin, AdminLogin
+    from db_schema.admin import Admin, AdminLogin
 
     Base.metadata.create_all(engine)
     print("Tables created successfully!")
