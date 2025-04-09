@@ -2,7 +2,7 @@ from datetime import datetime
 import uuid
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from handlers.exception_handlers.exception_handler import (
+from core.handlers.exception_handlers.exception_handler import (
     AdminAlreadyExistsError,
     InvalidAdminCredentialsError,
     MemberAlreadyExistsError,
@@ -15,21 +15,20 @@ from models.db_admin import (
     Member,
     ViewMembers,
 )
-from handlers.request_handlers.response_handlers import json_response
-from models.request_models import (
+from api.entrypoint.admin.models import (
     AdminLogins,
     CreateModel,
     NewBooks,
     NewMember,
 )
 from database.sql import get_db
-from models.response_models import MemberResponse
-from auth.helpers.password_hasing import hash_password, check_password
-from auth.auth_handler import signJWT
+from api.entrypoint.admin.responses import MemberResponse
+from core.auth.helpers.password_hasing import generate_random_password, hash_password, check_password
+from core.auth.auth_handler import signJWT
 from library_fast_api.logger import logger
-from models.response_models import MembersListResponse
+from api.entrypoint.admin.responses import MembersListResponse
 from library_fast_api.logger.logger import get_logger
-from auth.auth_handler import get_current_user
+from core.auth.auth_handler import get_current_user
 
 
 logger = get_logger()
@@ -181,7 +180,10 @@ def get_member(
 
     if existing_member:
         raise MemberAlreadyExistsError(newuser.name)
-    hashed_password = hash_password(newuser.password)
+    
+    plain_password = generate_random_password()
+
+    hashed_password = hash_password(plain_password)
 
     new_member_data = Member(
         name=newuser.name,
@@ -200,6 +202,7 @@ def get_member(
         member_id=new_member_data.member_id,
         name=new_member_data.name,
         role=new_member_data.role,
+        password=plain_password, 
     ).dict()
 
 

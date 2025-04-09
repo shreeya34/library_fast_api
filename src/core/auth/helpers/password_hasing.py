@@ -1,3 +1,7 @@
+import string
+import random
+
+
 from argon2 import PasswordHasher
 
 password_hasher = PasswordHasher()
@@ -21,3 +25,8 @@ def check_password(password: str, hashed_password: str) -> bool:
     except Exception as e:
         print(f"Password verification failed: {e}")
         return False
+
+
+def generate_random_password(length: int = 12) -> str:
+    characters = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.choice(characters) for _ in range(length))

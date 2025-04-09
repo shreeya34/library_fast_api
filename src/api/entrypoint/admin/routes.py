@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from database.sql import get_db
-from auth.auth_bearer import JWTBearer
-from auth.auth_handler import get_current_user
-from models.request_models import CreateModel, AdminLogins, NewMember, NewBooks
-from handlers.request_handlers.admin import (
+from core.auth.auth_bearer import JWTBearer
+from core.auth.auth_handler import get_current_user
+from api.entrypoint.admin.models import CreateModel, AdminLogins, NewMember, NewBooks
+from core.handlers.request_handlers.admin import (
     add_admin,
     get_admins,
     get_member,
@@ -13,8 +13,8 @@ from handlers.request_handlers.admin import (
     view_available_books,
     view_all_members,
 )
-from models.response_models import MembersListResponse
-from handlers.exception_handlers.exception_handler import InvalidAdminCredentialsError
+from api.entrypoint.admin.responses import MembersListResponse
+from core.handlers.exception_handlers.exception_handler import InvalidAdminCredentialsError
 from library_fast_api.logger.logger import get_logger
 
 logger = get_logger()

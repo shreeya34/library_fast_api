@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from database.sql import get_db
-from auth.auth_bearer import JWTBearer
-from auth.auth_handler import get_current_user
-from models.request_models import MemberLogin, BorrowBookRequest, ReturnBookRequest
-from models.response_models import BorrowedBookResponse
-from handlers.request_handlers.users import (
+from core.auth.auth_bearer import JWTBearer
+from core.auth.auth_handler import get_current_user
+from api.entrypoint.member.models import MemberLogin, BorrowBookRequest, ReturnBookRequest
+from api.entrypoint.member.responses import BorrowedBookResponse
+from core.handlers.request_handlers.users import (
     member_logins,
     get_borrowed_books_data,
     get_returned_books_data,

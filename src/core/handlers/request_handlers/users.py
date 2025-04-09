@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
-from handlers.exception_handlers.exception_handler import (
+from core.handlers.exception_handlers.exception_handler import (
     BookNotFoundError,
     BookUnavailableError,
     InvalidMemberCredentialsError,
@@ -9,12 +9,12 @@ from handlers.exception_handlers.exception_handler import (
 )
 from models.db_member import  BorrowedBooks, MemberLogins, ReturnBook
 from models.db_admin import Book, Member
-from handlers.request_handlers.response_handlers import json_response
-from models.request_models import BorrowBookRequest, MemberLogin, ReturnBookRequest
+from core.handlers.request_handlers.response_handlers import json_response
+from api.entrypoint.member.models import BorrowBookRequest, MemberLogin, ReturnBookRequest
 from database.sql import get_db
-from auth.auth_handler import get_current_user, signJWT
+from core.auth.auth_handler import get_current_user, signJWT
 from library_fast_api.logger.logger import get_logger
-from models.response_models import BorrowedBookResponse
+from api.entrypoint.member.responses import BorrowedBookResponse
 
 logger = get_logger()
 

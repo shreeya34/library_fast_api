@@ -35,5 +35,5 @@ allow-direct-references = true
 packages = ["src/library_fast_api"]
 
 [tool.rye.scripts]
-main = "fastapi dev src/main.py"
+main = "fastapi dev src/server.py"
 
