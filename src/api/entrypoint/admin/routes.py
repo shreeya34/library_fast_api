@@ -12,12 +12,14 @@ from modules.admin.handlers import (
     add_user_books,
     view_available_books,
     view_all_members,
+    view_member_by_id,
 )
 from api.entrypoint.admin.responses import MemberResponse, MembersListResponse
 from modules.admin.exception_handler import (
     InvalidAdminCredentialsError,
 )
 from api.utils.logger import get_logger
+
 
 logger = get_logger()
 router = APIRouter()
@@ -101,10 +103,10 @@ def view_members(
     response_model=MemberResponse,
     dependencies=[Depends(JWTBearer())],
 )
-def view_member_by_id(
+def view_member_by_id_route(
     member_id: str,
     request: Request,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
-    return view_member_by_id(member_id, request, db, user)
+    return view_member_by_id(member_id, db, user)

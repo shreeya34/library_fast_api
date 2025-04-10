@@ -9,10 +9,10 @@ from contextlib import asynccontextmanager
 logger = get_logger()
 
 # @asynccontextmanager
-# async def lifespan(app: FastAPI):  
+# async def lifespan(app: FastAPI):
 #     logger.info("Starting server")
-#     app.state.db = 
-#     yield 
+#     app.state.db =
+#     yield
 app = FastAPI()
 
 init_db()

@@ -10,7 +10,7 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
             return response
-        
+
         except RequestValidationError as val_err:
             logger.warning(f"Validation Error: {val_err.errors()}")
             return JSONResponse(
@@ -18,9 +18,8 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
                 content={"detail": val_err.errors()},
             )
 
-       
         except Exception as exc:
             logger.error(f"Internal Server Error: {str(exc)}", exc_info=True)
             return JSONResponse(
-                status_code=500, content={"detail": "An internal error occurred."}
+                status_code=500, content={"detail": "An unexcepted error occurred."}
             )

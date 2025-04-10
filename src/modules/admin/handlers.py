@@ -8,6 +8,7 @@ from modules.admin.exception_handler import (
     AdminAlreadyExistsError,
     InvalidAdminCredentialsError,
     MemberAlreadyExistsError,
+    MemberNotFoundError,
 )
 from db_schema.admin import (
     Admin,
@@ -39,6 +40,8 @@ from modules.admin.queries import (
     get_admin_by_username,
     get_all_members,
     get_all_view_members,
+    get_book_availability_by_book_id,
+    get_member_by_id,
     get_member_by_name,
     get_view_member_by_id,
 )
@@ -74,9 +77,7 @@ def add_admin(admin: CreateModel, db: Session) -> bool:
         role="admin",
     )
 
-    db.add(new_member)
-    db.commit()
-    db.refresh(new_member)
+    commit_and_refresh(db, new_member)
 
     logger.info("New admin and member added: %s", admin.username)
 
@@ -231,11 +232,7 @@ def view_available_books(
     for book in books:
         is_available = book.stock > 0
 
-        availability_record = (
-            db.query(BookAvailability)
-            .filter(BookAvailability.book_id == book.id)
-            .first()
-        )
+        availability_record = get_book_availability_by_book_id(db, book.id)
 
         if availability_record:
             availability_record.available = is_available
@@ -245,11 +242,10 @@ def view_available_books(
                 book_id=book.id, title=book.title, available=is_available
             )
             db.add(new_availability)
-
-        book_data.append(
-            {"title": book.title, "author": book.author, "available": is_available}
-        )
-
+        if is_available:
+            book_data.append(
+                {"title": book.title, "author": book.author, "available": is_available}
+            )
     db.commit()
     logger.info(f"Successfully fetched {len(book_data)} books.")
     return {"message": "Book available", "books": book_data}
@@ -297,21 +293,16 @@ def view_all_members(
     return MembersListResponse(filtered_members=member_data)
 
 
-def view_member_by_id(
-    member_id: str,
-    request: Request,
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
-):
+def view_member_by_id(member_id: str, db: Session, user: dict):
     if not user.get("is_admin"):
         raise AdminAccessDeniedError()
 
     logger.info(f"Fetching member with ID {member_id} from the database.")
 
-    member = get_view_member_by_id(db, member_id)
+    member = get_member_by_id(db, member_id)
 
     if not member:
-        raise HTTPException(status_code=404, detail="Member not found")
+        raise MemberNotFoundError(member_id)
 
     return {
         "name": member.name,

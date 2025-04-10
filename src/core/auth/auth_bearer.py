@@ -1,4 +1,3 @@
-# app/auth/auth_bearer.py
 
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
