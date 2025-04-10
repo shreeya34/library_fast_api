@@ -41,6 +41,7 @@ from modules.admin.queries import (
     get_all_members,
     get_all_view_members,
     get_book_availability_by_book_id,
+    get_existing_book,
     get_member_by_id,
     get_member_by_name,
     get_view_member_by_id,
@@ -124,11 +125,7 @@ def add_user_books(
         f"Admin {user['username']} is attempting to add/update a book: {newbook.title} by {newbook.author}"
     )
 
-    existing_logs = (
-        db.query(Book)
-        .filter(Book.title == newbook.title, Book.author == newbook.author)
-        .first()
-    )
+    existing_logs = get_existing_book(db, newbook)
 
     if existing_logs:
         existing_logs.stock += newbook.stock

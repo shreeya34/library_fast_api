@@ -10,9 +10,10 @@ logger = get_logger()
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
-#     logger.info("Starting server")
-#     app.state.db =
+#     logger.info(" Starting server...")
+#     init_db()  
 #     yield
+#     logger.info("Shutting down server...")
 app = FastAPI()
 
 init_db()

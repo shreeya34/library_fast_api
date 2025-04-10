@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from db_schema.admin import Admin, BookAvailability, Member, ViewMembers
+from db_schema.admin import Admin, Book, BookAvailability, Member, ViewMembers
 
 
 def get_admin_by_username(db: Session, username: str):
@@ -29,4 +29,12 @@ def get_member_by_id(db: Session, member_id: str):
 def get_book_availability_by_book_id(db: Session, book_id: int):
     return (
         db.query(BookAvailability).filter(BookAvailability.book_id == book_id).first()
+    )
+
+
+def get_existing_book(db: Session, newbook: Book):
+    return (
+        db.query(Book)
+        .filter(Book.title == newbook.title, Book.author == newbook.author)
+        .first()
     )

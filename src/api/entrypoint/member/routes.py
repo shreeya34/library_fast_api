@@ -10,6 +10,11 @@ from api.entrypoint.member.models import (
     ReturnBookRequest,
 )
 from api.entrypoint.member.responses import BorrowedBookResponse
+from modules.user.exception_handlers import (
+    RaiseBookError,
+    RaiseBorrowBookError,
+   
+)
 from modules.user.handlers import (
     member_logins,
     get_borrowed_books_data,
@@ -48,7 +53,7 @@ def borrow_book(
     if borrowed_books:
         return borrowed_books
     else:
-        raise HTTPException(status_code=400, detail="Unable to borrow book")
+        raise RaiseBorrowBookError()
 
 
 @router.post("/return_book", dependencies=[Depends(JWTBearer())])
@@ -64,4 +69,4 @@ def return_books(
             "returned_books": returned_books,
         }
     else:
-        raise HTTPException(status_code=400, detail="Unable to return book")
+        raise RaiseBookError()

@@ -22,6 +22,7 @@ from core.auth.auth_handler import get_current_user, signJWT
 from api.utils.logger import get_logger
 from api.entrypoint.member.responses import BorrowedBookResponse
 from modules.admin.queries import get_member_by_name
+from modules.user.exception_handlers import BookNotBorrowedError, DuplicateBookBorrowError
 from modules.user.queries import create_member_login, get_book_by_title
 
 logger = get_logger()
@@ -70,6 +71,15 @@ def get_borrowed_books_data(
     if not book or book.stock <= 0:
         logger.warning("Borrow attempt for unavailable book: %s", book_title)
         raise BookUnavailableError(book_title)
+    
+    already_borrowed = db.query(BorrowedBooks).filter(
+        BorrowedBooks.book_id == book.id,
+        BorrowedBooks.member_id == member.member_id
+    ).first()
+
+    if already_borrowed:
+        logger.warning("Duplicate borrow attempt: %s by user %s", book.title, member.name)
+        raise DuplicateBookBorrowError(book.title)
 
     borrow_date = datetime.now()
     expiry_date = borrow_date + timedelta(weeks=2)
@@ -108,6 +118,7 @@ def get_returned_books_data(
         raise RaiseUnauthorizedError()
 
     member = db.query(Member).filter(Member.member_id == user_id).first()
+
     if not member:
         logger.error("Return attempt by non-existent member: %s", user_id)
         raise MemberNotFoundError(user_id)
@@ -116,6 +127,15 @@ def get_returned_books_data(
     if not book:
         logger.warning("Return attempt for non-existent book: %s", book_title)
         raise BookNotFoundError(book_title)
+    borrowed_book = db.query(BorrowedBooks).filter(
+        BorrowedBooks.book_id == book.id,
+        BorrowedBooks.member_id == member.member_id
+    ).first()
+       
+    if not borrowed_book:
+        logger.warning("Book %s is not borrowed by member %s", book_title, member.name)
+        raise BookNotBorrowedError(book_title)
+    
     return_date = datetime.now()
     returned_book = ReturnBook(
         title=book.title,
@@ -124,6 +144,8 @@ def get_returned_books_data(
         name=member.name,
         return_date=return_date,
     )
+    db.delete(borrowed_book)
+    db.commit() 
 
     book.stock += 1
     commit_and_refresh(db, returned_book)
@@ -131,7 +153,6 @@ def get_returned_books_data(
     logger.info("Book returned: %s by %s", book.title, member.name)
 
     return {
-        "message": "Book returned successfully",
         "book_title": book.title,
         "name": member.name,
         "return_date": return_date.isoformat(),

@@ -5,6 +5,7 @@ from config.extension import get_db
 from core.auth.auth_bearer import JWTBearer
 from core.auth.auth_handler import get_current_user
 from api.entrypoint.admin.models import CreateModel, AdminLogins, NewMember, NewBooks
+from core.handlers.request_handlers.response_handlers import json_response
 from modules.admin.handlers import (
     add_admin,
     get_admins,
@@ -30,7 +31,7 @@ def create_admin(admin: CreateModel, db: Session = Depends(get_db)):
     logger.info(f"Creating admin: {admin.username}")
     success = add_admin(admin, db)
     if success:
-        return JSONResponse(
+        return json_response(
             status_code=201, content={"id": success.admin_id, "name": success.username}
         )
 
@@ -57,7 +58,7 @@ def add_member(
 ):
     members = get_member(request, newuser, db, user)
     if members:
-        return JSONResponse(
+        return json_response(
             status_code=201,
             content={"message": "Member added successfully", "new_member": members},
         )
@@ -72,7 +73,7 @@ def add_books(
 ):
     result = add_user_books(request, newbook, db, user)
     if "new_book" in result:
-        return JSONResponse(status_code=201, content=result)
+        return json_response(content=result, status_code=201)
 
 
 @router.get("/view_available_books", dependencies=[Depends(JWTBearer())])
@@ -82,7 +83,7 @@ def view_books(
     user: dict = Depends(get_current_user),
 ):
     viewBooks = view_available_books(request, db, user)
-    return JSONResponse(status_code=200, content=viewBooks)
+    return json_response(content=viewBooks, status_code=200)
 
 
 @router.get(
