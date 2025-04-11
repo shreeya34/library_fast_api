@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from config.extension import get_db
@@ -20,6 +20,7 @@ from modules.admin.exception_handler import (
     InvalidAdminCredentialsError,
 )
 from api.utils.logger import get_logger
+from modules.user.queries import get_book_by_title
 
 
 logger = get_logger()
@@ -79,10 +80,11 @@ def add_books(
 @router.get("/view_available_books", dependencies=[Depends(JWTBearer())])
 def view_books(
     request: Request,
+    title: str = Query(None),
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
-    viewBooks = view_available_books(request, db, user)
+    viewBooks = view_available_books(title,db, user)
     return json_response(content=viewBooks, status_code=200)
 
 
@@ -112,12 +114,3 @@ def view_members_by_id(
 ):
     return view_member_by_id(member_id, db, user)
 
-@router.get("/view_available_books/{title}", dependencies=[Depends(JWTBearer())])
-def view_books_by_title(
-    title: str,
-    request: Request,
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
-):
-    viewBooks = view_available_books(request, db, user, title)
-    return json_response(content=viewBooks, status_code=200)

@@ -211,18 +211,22 @@ def get_member(
 
 
 def view_available_books(
-    request: Request,
+    title: str,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
 
     if not user.get("is_admin"):
         raise AdminAccessDeniedError()
-    books = db.query(Book).all()
+    if title:
+        books = db.query(Book).filter(Book.title.ilike(f"%{title}%")).all()
+    else:
+        books = db.query(Book).all()
 
+    
     if not books:
-        logger.warning("No books found in the system.")
-        return {"message": "No books found in the system"}
+        logger.warning(f"No books found with title '{title}'.")
+        return {"message": f"No books found with title '{title}'"}
 
     book_data = []
 
@@ -307,24 +311,3 @@ def view_member_by_id(member_id: str, db: Session, user: dict):
         "member_id": member.member_id,
     }
     
-def view_books_by_title(
-    title: str,
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
-):
-    if not user.get("is_admin"):
-        raise AdminAccessDeniedError()
-
-    logger.info(f"Fetching books with title '{title}' from the database.")
-
-    book = db.query(Book).filter(Book.title == title).first()
-
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    return {
-        "title": book.title,
-        "author": book.author,
-        "stock": book.stock,
-        "available": book.available,
-    }
