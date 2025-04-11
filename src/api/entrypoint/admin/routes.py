@@ -104,10 +104,20 @@ def view_members(
     response_model=MemberResponse,
     dependencies=[Depends(JWTBearer())],
 )
-def view_member_by_id_route(
+def view_members_by_id(
     member_id: str,
     request: Request,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
     return view_member_by_id(member_id, db, user)
+
+@router.get("/view_available_books/{title}", dependencies=[Depends(JWTBearer())])
+def view_books_by_title(
+    title: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    viewBooks = view_available_books(request, db, user, title)
+    return json_response(content=viewBooks, status_code=200)

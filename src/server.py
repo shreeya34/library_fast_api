@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from core.handlers.exception_handlers.middleware import ExceptionHandlerMiddleware
+from core.middleware import ExceptionHandlerMiddleware
 from config.extension import init_db
 from api.utils.logger import get_logger
 from api.entrypoint.admin import routes as admin_routes
@@ -8,17 +8,25 @@ from contextlib import asynccontextmanager
 
 logger = get_logger()
 
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     logger.info(" Starting server...")
-#     init_db()  
-#     yield
-#     logger.info("Shutting down server...")
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info(" Starting server...")
+    init_db()  
+    yield
+    logger.info("Shutting down server...")
 
-init_db()
+app=FastAPI(lifespan=lifespan)
 
-app.add_middleware(ExceptionHandlerMiddleware)
 
-app.include_router(admin_routes.router, tags=["admin"])
-app.include_router(member_routes.router, tags=["member"])
+
+def init_app()->FastAPI:
+    app = FastAPI(lifespan=lifespan)
+
+    app.include_router(admin_routes.router)
+    app.include_router(member_routes.router, tags=["member"])
+
+    app.add_middleware(ExceptionHandlerMiddleware)
+
+    return app
+
+app = init_app()
