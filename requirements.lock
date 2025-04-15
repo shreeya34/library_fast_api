@@ -76,6 +76,8 @@ pathspec==0.12.1
     # via black
 platformdirs==4.3.7
     # via black
+pluggy==1.5.0
+    # via library-fast-api
 psycopg2==2.9.10
     # via library-fast-api
 psycopg2-binary==2.9.10

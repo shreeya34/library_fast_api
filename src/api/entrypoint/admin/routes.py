@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query, Request, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from api.dependencies import get_db_from_app
 from config.extension import get_db
 from core.auth.auth_bearer import JWTBearer
 from core.auth.auth_handler import get_current_user
@@ -28,7 +29,8 @@ router = APIRouter()
 
 
 @router.post("/")
-def create_admin(admin: CreateModel, db: Session = Depends(get_db)):
+def create_admin(admin: CreateModel,db: Session = Depends(get_db_from_app)
+):
     logger.info(f"Creating admin: {admin.username}")
     success = add_admin(admin, db)
     if success:
@@ -38,7 +40,8 @@ def create_admin(admin: CreateModel, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login_admin(admin_data: AdminLogins, db: Session = Depends(get_db)):
+def login_admin(admin_data: AdminLogins,db: Session = Depends(get_db_from_app)
+):
     try:
         login_result = get_admins(admin_data, db)
         return {
@@ -54,7 +57,7 @@ def login_admin(admin_data: AdminLogins, db: Session = Depends(get_db)):
 def add_member(
     request: Request,
     newuser: NewMember,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_from_app),
     user: dict = Depends(get_current_user),
 ):
     members = get_member(request, newuser, db, user)
@@ -69,7 +72,7 @@ def add_member(
 def add_books(
     request: Request,
     newbook: NewBooks,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_from_app),
     user: dict = Depends(get_current_user),
 ):
     result = add_user_books(request, newbook, db, user)
@@ -81,7 +84,8 @@ def add_books(
 def view_books(
     request: Request,
     title: str = Query(None),
-    db: Session = Depends(get_db),
+    # db: Session = Depends(get_db)     
+     db: Session = Depends(get_db_from_app),
     user: dict = Depends(get_current_user),
 ):
     viewBooks = view_available_books(title,db, user)
@@ -95,7 +99,7 @@ def view_books(
 )
 def view_members(
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_from_app),
     user: dict = Depends(get_current_user),
 ):
     return view_all_members(request, db, user)
@@ -109,7 +113,7 @@ def view_members(
 def view_members_by_id(
     member_id: str,
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_from_app),
     user: dict = Depends(get_current_user),
 ):
     return view_member_by_id(member_id, db, user)

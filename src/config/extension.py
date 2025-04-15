@@ -6,16 +6,19 @@ from config.settings import settings
 
 Base = declarative_base()
 
-# DATABASE_URL = f"postgresql://{settings.database_username}:{settings.database_password}@{settings.database_host}:{settings.database_port}/{settings.database_name}"
 
-_engine = create_engine(f"postgresql://{settings.database_username}:{settings.database_password}@{settings.database_host}:{settings.database_port}/{settings.database_name}"
-)
+def create_db_engine():
+    engine = create_engine(
+        f"postgresql://{settings.database_username}:{settings.database_password}"
+        f"@{settings.database_host}:{settings.database_port}/{settings.database_name}"
+    )
+    return engine
 
-def init_db():
-    Base.metadata.create_all(bind=_engine)
+def init_db(engine):
+    Base.metadata.create_all(bind=engine)
 
 
-def get_db():
-    with Session(_engine) as session:
+def get_db(engine):
+    with Session(engine) as session:
         yield session
 
