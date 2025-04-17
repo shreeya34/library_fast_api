@@ -8,9 +8,8 @@ from sqlalchemy import (
     String,
     DateTime,
 )
-from database.sql import Base
+from config.extension import Base
 from sqlalchemy.orm import relationship
-
 
 
 class MemberLogins(Base):

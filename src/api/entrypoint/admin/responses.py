@@ -8,7 +8,6 @@ class MemberResponse(BaseModel):
     name: str
     role: str
     member_id: str
-    password: str  
 
 
 class MembersListResponse(BaseModel):

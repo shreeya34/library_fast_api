@@ -2,12 +2,15 @@ from datetime import datetime
 import uuid
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from core.handlers.exception_handlers.exception_handler import (
+from api.utils.db_operation import commit_and_refresh
+from modules.admin.exception_handler import (
+    AdminAccessDeniedError,
     AdminAlreadyExistsError,
     InvalidAdminCredentialsError,
     MemberAlreadyExistsError,
+    MemberNotFoundError,
 )
-from models.db_admin import (
+from db_schema.admin import (
     Admin,
     AdminLogin,
     Book,
@@ -21,21 +24,35 @@ from api.entrypoint.admin.models import (
     NewBooks,
     NewMember,
 )
-from database.sql import get_db
+from config.extension import get_db
 from api.entrypoint.admin.responses import MemberResponse
-from core.auth.helpers.password_hasing import generate_random_password, hash_password, check_password
+from core.auth.security.password_hasing import (
+    generate_random_password,
+    hash_password,
+    check_password,
+)
 from core.auth.auth_handler import signJWT
-from library_fast_api.logger import logger
+from api.utils import logger
 from api.entrypoint.admin.responses import MembersListResponse
-from library_fast_api.logger.logger import get_logger
+from api.utils.logger import get_logger
 from core.auth.auth_handler import get_current_user
+from modules.admin.queries import (
+    get_admin_by_username,
+    get_all_members,
+    get_all_view_members,
+    get_book_availability_by_book_id,
+    get_existing_book,
+    get_member_by_id,
+    get_member_by_name,
+    get_view_member_by_id,
+)
 
 
 logger = get_logger()
 
 
 def add_admin(admin: CreateModel, db: Session) -> bool:
-    existing_admin = db.query(Admin).filter(Admin.username == admin.username).first()
+    existing_admin = get_admin_by_username(db, admin.username)
     if existing_admin:
         logger.warning(
             "Attempt to create an admin that already exists: %s", admin.username
@@ -51,9 +68,8 @@ def add_admin(admin: CreateModel, db: Session) -> bool:
         password=hashed_password,
         role="admin",
     )
-    db.add(new_admin)
-    db.commit()
-    db.refresh(new_admin)
+
+    commit_and_refresh(db, new_admin)
 
     new_member = Member(
         member_id=admin_id,
@@ -62,19 +78,15 @@ def add_admin(admin: CreateModel, db: Session) -> bool:
         role="admin",
     )
 
-    db.add(new_member)
-    db.commit()
-    db.refresh(new_member)
+    commit_and_refresh(db, new_member)
 
     logger.info("New admin and member added: %s", admin.username)
 
     return new_admin
 
-   
-
 
 def get_admins(admin_data: AdminLogins, db: Session = Depends(get_db)):
-    admin = db.query(Admin).filter(Admin.username == admin_data.username).first()
+    admin = get_admin_by_username(db, admin_data.username)
     if not admin or not check_password(admin_data.password, admin.password):
         logger.warning("Failed admin login attempt: %s", admin_data.username)
         raise InvalidAdminCredentialsError(admin_data.username)
@@ -88,9 +100,8 @@ def get_admins(admin_data: AdminLogins, db: Session = Depends(get_db)):
         password=admin_data.password,
         member_id=admin.admin_id,
     )
-    db.add(new_login)
-    db.commit()
-    db.refresh(new_login)
+
+    commit_and_refresh(db, new_login)
 
     logger.info("Admin logged in: %s", admin_data.username)
     return {
@@ -114,11 +125,7 @@ def add_user_books(
         f"Admin {user['username']} is attempting to add/update a book: {newbook.title} by {newbook.author}"
     )
 
-    existing_logs = (
-        db.query(Book)
-        .filter(Book.title == newbook.title, Book.author == newbook.author)
-        .first()
-    )
+    existing_logs = get_existing_book(db, newbook)
 
     if existing_logs:
         existing_logs.stock += newbook.stock
@@ -147,9 +154,8 @@ def add_user_books(
         available=True,
         id=str(uuid.uuid4()),
     )
-    db.add(new_books_data)
-    db.commit()
-    db.refresh(new_books_data)
+
+    commit_and_refresh(db, new_books_data)
 
     logger.info(
         f"New book '{new_books_data.title}' added successfully  Stock: {new_books_data.stock}"
@@ -174,13 +180,13 @@ def get_member(
 ):
 
     if not user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise AdminAccessDeniedError()
 
-    existing_member = db.query(Member).filter(Member.name == newuser.name).first()
+    existing_member = get_member_by_name(db, newuser.name)
 
     if existing_member:
         raise MemberAlreadyExistsError(newuser.name)
-    
+
     plain_password = generate_random_password()
 
     hashed_password = hash_password(plain_password)
@@ -192,9 +198,7 @@ def get_member(
         member_id=str(uuid.uuid4()),
     )
 
-    db.add(new_member_data)
-    db.commit()
-    db.refresh(new_member_data)
+    commit_and_refresh(db, new_member_data)
 
     logger.info(f"New member '{new_member_data.name}' added successfully")
 
@@ -202,34 +206,34 @@ def get_member(
         member_id=new_member_data.member_id,
         name=new_member_data.name,
         role=new_member_data.role,
-        password=plain_password, 
+        password=plain_password,
     ).dict()
 
 
 def view_available_books(
-    request: Request,
+    title: str,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
 
     if not user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Access denied")
-    books = db.query(Book).all()
+        raise AdminAccessDeniedError()
+    if title:
+        books = db.query(Book).filter(Book.title.ilike(f"%{title}%")).all()
+    else:
+        books = db.query(Book).all()
 
+    
     if not books:
-        logger.warning("No books found in the system.")
-        return {"message": "No books found in the system"}
+        logger.warning(f"No books found with title '{title}'.")
+        return {"message": f"No books found with title '{title}'"}
 
     book_data = []
 
     for book in books:
         is_available = book.stock > 0
 
-        availability_record = (
-            db.query(BookAvailability)
-            .filter(BookAvailability.book_id == book.id)
-            .first()
-        )
+        availability_record = get_book_availability_by_book_id(db, book.id)
 
         if availability_record:
             availability_record.available = is_available
@@ -239,11 +243,10 @@ def view_available_books(
                 book_id=book.id, title=book.title, available=is_available
             )
             db.add(new_availability)
-
-        book_data.append(
-            {"title": book.title, "author": book.author, "available": is_available}
-        )
-
+        if is_available:
+            book_data.append(
+                {"title": book.title, "author": book.author, "available": is_available}
+            )
     db.commit()
     logger.info(f"Successfully fetched {len(book_data)} books.")
     return {"message": "Book available", "books": book_data}
@@ -255,24 +258,20 @@ def view_all_members(
     user: dict = Depends(get_current_user),
 ):
     if not user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise AdminAccessDeniedError()
 
     logger.info("Fetching all members from the database.")
 
-    members = db.query(Member).all()
+    members = get_all_members(db)
 
     if not members:
         logger.warning("No members found in the system.")
         return {"message": "No members found in the system"}
 
     for member in members:
-        existing_view_member = (
-            db.query(ViewMembers)
-            .filter(ViewMembers.member_id == member.member_id)
-            .first()
-        )
+        existing_view_member = get_view_member_by_id(db, member.member_id)
 
-        if not existing_view_member:  # Add only if it doesn't exist
+        if not existing_view_member:
             new_view_member = ViewMembers(
                 member_id=member.member_id, name=member.name, role=member.role
             )
@@ -282,7 +281,7 @@ def view_all_members(
 
     logger.info(f"Successfully processed {len(members)} members.")
 
-    view_members = db.query(ViewMembers).all()
+    view_members = get_all_view_members(db)
     member_data = [
         {
             "name": view_member.name,
@@ -293,3 +292,22 @@ def view_all_members(
     ]
 
     return MembersListResponse(filtered_members=member_data)
+
+
+def view_member_by_id(member_id: str, db: Session, user: dict):
+    if not user.get("is_admin"):
+        raise AdminAccessDeniedError()
+
+    logger.info(f"Fetching member with ID {member_id} from the database.")
+
+    member = get_member_by_id(db, member_id)
+
+    if not member:
+        raise MemberNotFoundError(member_id)
+
+    return {
+        "name": member.name,
+        "role": member.role,
+        "member_id": member.member_id,
+    }
+    

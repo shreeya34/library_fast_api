@@ -7,7 +7,7 @@ from sqlalchemy import (
     String,
     Boolean,
 )
-from database.sql import Base
+from config.extension import Base
 import uuid
 from sqlalchemy.orm import relationship
 
@@ -80,5 +80,3 @@ class ViewMembers(Base):
     member_id = Column(String, unique=True, nullable=False)
     name = Column(String, unique=True, nullable=False)
     role = Column(String, nullable=False)
-
-
